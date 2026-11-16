@@ -1,27 +1,27 @@
-![easyLB](assets/easylb-banner.svg)
+![L2Keeper](assets/l2keeper-banner.svg)
 
-# easyLB
+# L2Keeper
 
 A lightweight Kubernetes LoadBalancer controller for bare-metal, on-prem,
-k3s and RKE2 clusters. easyLB publishes node IPs and VIPs into
+k3s and RKE2 clusters. L2Keeper publishes node IPs and VIPs into
 `Service.status.loadBalancer.ingress` and leaves the entire dataplane to the
 built-in **kube-proxy**.
 
 It is a drop-in replacement for the k3s/RKE2 ServiceLB and for MetalLB's L2
 mode in small bare-metal clusters that do not need BGP or MetalLB's advanced
 traffic-engineering features. You can bring VIPs you already own
-(keepalived/VRRP, a hardware load balancer) or let easyLB own them through its
+(keepalived/VRRP, a hardware load balancer) or let L2Keeper own them through its
 L2 speaker, ARP and per-VIP leader election.
 
 [Русская документация](ru/architecture.md)
 
-## Why easyLB
+## Why L2Keeper
 
 Kubernetes on-prem usually has no cloud load balancer. The built-in k3s/RKE2
 ServiceLB (klipper) fills the gap with `svclb` pods using `hostPort` and
 DNAT+MASQUERADE. That adds a hop and can hide the client source IP.
 
-easyLB is a control-plane controller only:
+L2Keeper is a control-plane controller only:
 
 ```text
 client -> NodeIP or VIP -> kube-proxy -> ingress-nginx / pods
@@ -44,7 +44,7 @@ source IP is preserved, and no `svclb` pods or extra NAT hop are needed.
 - Publishes node IPs and VIPs into `status.loadBalancer.ingress`.
 - Bring-your-own-VIP mode (`external`) for keepalived/VRRP, hardware LBs, or
   any externally managed address.
-- Native L2 mode (`l2`): easyLB owns the VIP and advertises IPv4 with ARP and
+- Native L2 mode (`l2`): L2Keeper owns the VIP and advertises IPv4 with ARP and
   IPv6 with NDP.
 - Source IP preservation with `externalTrafficPolicy: Local`.
 - HA controller: multiple replicas, leader election, PDB, node spreading.
@@ -56,9 +56,9 @@ source IP is preserved, and no `svclb` pods or extra NAT hop are needed.
 ## Install
 
 ```bash
-helm upgrade --install easylb oci://ghcr.io/bzdvdn/charts/easylb \
+helm upgrade --install l2keeper oci://ghcr.io/l2keeper/charts/l2keeper \
   --version <chart-version> \
-  --namespace easylb-system \
+  --namespace l2keeper-system \
   --create-namespace \
   -f my-values.yaml
 ```
@@ -79,7 +79,7 @@ pools:
     autoAssign: true
 
 bindings:
-  ingress-easylb:
+  ingress-l2keeper:
     namespace: ingress-nginx
     serviceRef: my-release-ingress-nginx-controller
     mode: l2
@@ -91,17 +91,17 @@ bindings automatically, like MetalLB.
 
 ## Gateway API
 
-easyLB works with any Gateway API implementation that exposes its data plane
+L2Keeper works with any Gateway API implementation that exposes its data plane
 through a `Service` of type `LoadBalancer`. With `gatewayAPI.enabled: true` it
 watches `Gateway` objects in the stable `gateway.networking.k8s.io/v1` API and
 creates `VIPBinding` resources automatically.
 
-easyLB uses unstructured objects and reads only the stable `v1` surface, so
+L2Keeper uses unstructured objects and reads only the stable `v1` surface, so
 newer Gateway API fields and resources are ignored instead of breaking
 reconciliation. Gateway API v1.5+ requires Kubernetes 1.31+; on older clusters
 use v1.4.1 (or v1.0.0 for Kubernetes 1.25) as long as the CRDs serve `v1`.
 ListenerSet, TLSRoute, gateway status handling, and other new Gateway API
-features are not implemented by easyLB.
+features are not implemented by L2Keeper.
 
 See [Gateway API](en/gateway-api.md).
 
@@ -120,7 +120,7 @@ English:
 - [Migrating from ServiceLB](en/migration-servicelb.md)
 - [Roadmap](roadmap.md)
 - [Community](community.md)
-- [Examples](https://github.com/bzdvdn/easylb/tree/master/examples)
+- [Examples](https://github.com/l2keeper/l2keeper/tree/master/examples)
 - [Architecture decisions](en/decisions/0001-publish-only-controller.md)
 
 Russian:

@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	easylv1alpha1 "github.com/bzdvdn/easylb/api/v1alpha1"
+	l2keeperv1alpha1 "github.com/l2keeper/l2keeper/api/v1alpha1"
 )
 
 func TestAutoBindingCreatesFromPool(t *testing.T) {
@@ -29,7 +29,7 @@ func TestAutoBindingCreatesFromPool(t *testing.T) {
 	if binding.Spec.PoolRef == nil || binding.Spec.PoolRef.Name != "pool-a" {
 		t.Fatalf("unexpected poolRef: %#v", binding.Spec.PoolRef)
 	}
-	if binding.Spec.Mode != easylv1alpha1.VIPModeL2 {
+	if binding.Spec.Mode != l2keeperv1alpha1.VIPModeL2 {
 		t.Fatalf("unexpected mode: %q", binding.Spec.Mode)
 	}
 	if binding.Labels[autoBindingLabel] != "true" || binding.Labels[autoBindingPool] != "pool-a" {
@@ -120,7 +120,7 @@ func TestAutoBindingHonorsLoadBalancerIP(t *testing.T) {
 func TestAutoBindingRespectsSelectors(t *testing.T) {
 	prod := autoTestNamespace("prod", map[string]string{"env": "prod"})
 	dev := autoTestNamespace("dev", map[string]string{"env": "dev"})
-	pool := autoTestPool("pool-a", []string{"10.0.0.10"}, nil, "", &easylv1alpha1.ServiceAllocation{
+	pool := autoTestPool("pool-a", []string{"10.0.0.10"}, nil, "", &l2keeperv1alpha1.ServiceAllocation{
 		NamespaceSelector: &metav1.LabelSelector{MatchLabels: map[string]string{"env": "prod"}},
 		ServiceSelector:   &metav1.LabelSelector{MatchLabels: map[string]string{"app": "web"}},
 	})
@@ -265,12 +265,12 @@ func TestAutoBindingUpdatesPoolFromAnnotation(t *testing.T) {
 func TestAutoBindingPoolMode(t *testing.T) {
 	tests := []struct {
 		name string
-		mode easylv1alpha1.VIPMode
-		want easylv1alpha1.VIPMode
+		mode l2keeperv1alpha1.VIPMode
+		want l2keeperv1alpha1.VIPMode
 	}{
-		{name: "default", want: easylv1alpha1.VIPModeL2},
-		{name: "external", mode: easylv1alpha1.VIPModeExternal, want: easylv1alpha1.VIPModeExternal},
-		{name: "l2", mode: easylv1alpha1.VIPModeL2, want: easylv1alpha1.VIPModeL2},
+		{name: "default", want: l2keeperv1alpha1.VIPModeL2},
+		{name: "external", mode: l2keeperv1alpha1.VIPModeExternal, want: l2keeperv1alpha1.VIPModeExternal},
+		{name: "l2", mode: l2keeperv1alpha1.VIPModeL2, want: l2keeperv1alpha1.VIPModeL2},
 	}
 
 	for _, tt := range tests {
@@ -363,8 +363,8 @@ func newAutoReconciler(t *testing.T, objects ...client.Object) (*ServiceAllocati
 	if err := clientgoscheme.AddToScheme(scheme); err != nil {
 		t.Fatalf("failed to build scheme: %v", err)
 	}
-	if err := easylv1alpha1.AddToScheme(scheme); err != nil {
-		t.Fatalf("failed to add easyLB scheme: %v", err)
+	if err := l2keeperv1alpha1.AddToScheme(scheme); err != nil {
+		t.Fatalf("failed to add L2Keeper scheme: %v", err)
 	}
 
 	c := fake.NewClientBuilder().
@@ -373,7 +373,7 @@ func newAutoReconciler(t *testing.T, objects ...client.Object) (*ServiceAllocati
 		Build()
 	return &ServiceAllocationReconciler{
 		Client:       c,
-		LBClass:      "easylb.io/easylb",
+		LBClass:      "l2keeper.github.io/lb",
 		RequireClass: false,
 		RequeueAfter: time.Minute,
 	}, c
@@ -401,10 +401,10 @@ func autoTestNamespace(name string, namespaceLabels map[string]string) *corev1.N
 	}
 }
 
-func autoTestPool(name string, addresses []string, autoAssign *bool, mode easylv1alpha1.VIPMode, allocation *easylv1alpha1.ServiceAllocation) *easylv1alpha1.VIPPool {
-	return &easylv1alpha1.VIPPool{
+func autoTestPool(name string, addresses []string, autoAssign *bool, mode l2keeperv1alpha1.VIPMode, allocation *l2keeperv1alpha1.ServiceAllocation) *l2keeperv1alpha1.VIPPool {
+	return &l2keeperv1alpha1.VIPPool{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
-		Spec: easylv1alpha1.VIPPoolSpec{
+		Spec: l2keeperv1alpha1.VIPPoolSpec{
 			Addresses:         addresses,
 			AutoAssign:        autoAssign,
 			Mode:              mode,
@@ -413,15 +413,15 @@ func autoTestPool(name string, addresses []string, autoAssign *bool, mode easylv
 	}
 }
 
-func autoTestBinding(name, namespace, service string, vips []string) *easylv1alpha1.VIPBinding {
-	return &easylv1alpha1.VIPBinding{
+func autoTestBinding(name, namespace, service string, vips []string) *l2keeperv1alpha1.VIPBinding {
+	return &l2keeperv1alpha1.VIPBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
-		Spec: easylv1alpha1.VIPBindingSpec{
-			ServiceRef: easylv1alpha1.ServiceReference{Name: service},
-			Mode:       easylv1alpha1.VIPModeL2,
+		Spec: l2keeperv1alpha1.VIPBindingSpec{
+			ServiceRef: l2keeperv1alpha1.ServiceReference{Name: service},
+			Mode:       l2keeperv1alpha1.VIPModeL2,
 			VIPs:       vips,
 		},
-		Status: easylv1alpha1.VIPBindingStatus{AllocatedIPs: append([]string(nil), vips...)},
+		Status: l2keeperv1alpha1.VIPBindingStatus{AllocatedIPs: append([]string(nil), vips...)},
 	}
 }
 
@@ -434,7 +434,7 @@ func reconcileAuto(t *testing.T, r *ServiceAllocationReconciler, namespace, name
 	}
 }
 
-func getAutoBinding(t *testing.T, c client.Client, namespace, name string) *easylv1alpha1.VIPBinding {
+func getAutoBinding(t *testing.T, c client.Client, namespace, name string) *l2keeperv1alpha1.VIPBinding {
 	t.Helper()
 	binding, err := getAutoBindingResult(c, namespace, name)
 	if err != nil {
@@ -443,8 +443,8 @@ func getAutoBinding(t *testing.T, c client.Client, namespace, name string) *easy
 	return binding
 }
 
-func getAutoBindingResult(c client.Client, namespace, name string) (*easylv1alpha1.VIPBinding, error) {
-	var binding easylv1alpha1.VIPBinding
+func getAutoBindingResult(c client.Client, namespace, name string) (*l2keeperv1alpha1.VIPBinding, error) {
+	var binding l2keeperv1alpha1.VIPBinding
 	if err := c.Get(context.Background(), types.NamespacedName{Namespace: namespace, Name: name}, &binding); err != nil {
 		return nil, err
 	}

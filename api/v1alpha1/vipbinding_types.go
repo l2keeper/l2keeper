@@ -9,13 +9,13 @@ import (
 type VIPMode string
 
 const (
-	// VIPModeExternal means the VIP is managed outside easyLB, for example by
+	// VIPModeExternal means the VIP is managed outside L2Keeper, for example by
 	// keepalived configured by a cluster administrator.
 	VIPModeExternal VIPMode = "external"
-	// VIPModeL2 means the easyLB speaker owns the VIP and advertises it via
+	// VIPModeL2 means the L2Keeper speaker owns the VIP and advertises it via
 	// ARP/NDP.
 	VIPModeL2 VIPMode = "l2"
-	// VIPModeBGP is reserved for a future easyLB BGP speaker.
+	// VIPModeBGP is reserved for a future L2Keeper BGP speaker.
 	VIPModeBGP VIPMode = "bgp"
 )
 

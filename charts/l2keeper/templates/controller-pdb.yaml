@@ -2,14 +2,14 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ include "easylb.fullname" . }}-controller
+  name: {{ include "l2keeper.fullname" . }}-controller
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "easylb.labels" . | nindent 4 }}
+    {{- include "l2keeper.labels" . | nindent 4 }}
     app.kubernetes.io/component: controller
 spec:
   minAvailable: {{ .Values.controller.pdb.minAvailable }}
   selector:
     matchLabels:
-      {{- include "easylb.controllerSelectorLabels" . | nindent 6 }}
+      {{- include "l2keeper.controllerSelectorLabels" . | nindent 6 }}
 {{- end }}

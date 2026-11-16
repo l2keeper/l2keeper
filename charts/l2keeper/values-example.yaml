@@ -1,10 +1,10 @@
 # Example values for a test cluster.
 #
-# - The chart defaults are used for images: ghcr.io/bzdvdn/easylb:<appVersion>.
+# - The chart defaults are used for images: ghcr.io/l2keeper/l2keeper:<appVersion>.
 #   Override controller.image and speaker.image for a fork or a locally built
 #   image.
 # - 192.168.56.250 stays on keepalived (external mode).
-# - 192.168.56.240 is automatically allocated by easyLB and advertised by the
+# - 192.168.56.240 is automatically allocated by L2Keeper and advertised by the
 #   L2 speaker.
 # - Node IPs are not published (publishNodeIPs=false); set it to true if DNS
 #   still points at node IPs.
@@ -28,7 +28,7 @@ pools:
           kubernetes.io/metadata.name: ingress-nginx
 
 bindings:
-  ingress-easylb:
+  ingress-l2keeper:
     namespace: ingress-nginx
     serviceRef: my-release-ingress-nginx-controller
     mode: l2

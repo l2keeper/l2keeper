@@ -19,10 +19,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	easylv1alpha1 "github.com/bzdvdn/easylb/api/v1alpha1"
-	"github.com/bzdvdn/easylb/internal/address"
-	"github.com/bzdvdn/easylb/internal/filter"
-	"github.com/bzdvdn/easylb/internal/vip"
+	l2keeperv1alpha1 "github.com/l2keeper/l2keeper/api/v1alpha1"
+	"github.com/l2keeper/l2keeper/internal/address"
+	"github.com/l2keeper/l2keeper/internal/filter"
+	"github.com/l2keeper/l2keeper/internal/vip"
 )
 
 // ServiceReconciler publishes node IPs and external VIPs into the
@@ -126,14 +126,14 @@ func (r *ServiceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&discoveryv1.EndpointSlice{},
 			handler.EnqueueRequestsFromMapFunc(r.serviceForEndpointSlice),
 		).
-		Watches(&easylv1alpha1.VIPBinding{},
+		Watches(&l2keeperv1alpha1.VIPBinding{},
 			handler.EnqueueRequestsFromMapFunc(r.serviceForBinding),
 		).
 		Complete(r)
 }
 
 func (r *ServiceReconciler) serviceForBinding(_ context.Context, obj client.Object) []reconcile.Request {
-	binding, ok := obj.(*easylv1alpha1.VIPBinding)
+	binding, ok := obj.(*l2keeperv1alpha1.VIPBinding)
 	if !ok || binding.Spec.ServiceRef.Name == "" {
 		return nil
 	}

@@ -7,7 +7,7 @@ import (
 )
 
 // EnabledAnnotation can be set to "false" to opt a Service out.
-const EnabledAnnotation = "easylb.io/enabled"
+const EnabledAnnotation = "l2keeper.github.io/enabled"
 
 // Options controls Service selection.
 type Options struct {
@@ -15,7 +15,7 @@ type Options struct {
 	RequireClass bool
 }
 
-// Manages reports whether svc belongs to easyLB.
+// Manages reports whether svc belongs to L2Keeper.
 func Manages(svc *corev1.Service, opts Options) bool {
 	if svc == nil || svc.Spec.Type != corev1.ServiceTypeLoadBalancer {
 		return false

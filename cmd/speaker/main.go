@@ -1,4 +1,4 @@
-// Command speaker runs the easyLB L2 speaker.
+// Command speaker runs the L2Keeper L2 speaker.
 package main
 
 import (
@@ -17,15 +17,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	easylv1alpha1 "github.com/bzdvdn/easylb/api/v1alpha1"
-	"github.com/bzdvdn/easylb/internal/speaker"
+	l2keeperv1alpha1 "github.com/l2keeper/l2keeper/api/v1alpha1"
+	"github.com/l2keeper/l2keeper/internal/speaker"
 )
 
 var scheme = runtime.NewScheme()
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(easylv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(l2keeperv1alpha1.AddToScheme(scheme))
 }
 
 func main() {
@@ -51,9 +51,9 @@ func main() {
 	flag.StringVar(&podName, "pod-name", os.Getenv("POD_NAME"), "Name of this speaker pod (used as the lease identity).")
 	flag.StringVar(&interfaceName, "interface", "", "Network interface for ARP. Auto-detected from the node IP when empty.")
 	flag.StringVar(&nodeIPType, "node-ip-type", string(corev1.NodeInternalIP), "Node address type used to find the ARP interface.")
-	flag.StringVar(&lbClass, "load-balancer-class", "easylb.io/easylb", "LoadBalancerClass handled by easyLB.")
+	flag.StringVar(&lbClass, "load-balancer-class", "l2keeper.github.io/lb", "LoadBalancerClass handled by L2Keeper.")
 	flag.BoolVar(&requireClass, "require-class", true, "Only handle Services with the configured loadBalancerClass.")
-	flag.StringVar(&leaseNamespace, "lease-namespace", "easylb-system", "Namespace for per-VIP leader election Leases.")
+	flag.StringVar(&leaseNamespace, "lease-namespace", "l2keeper-system", "Namespace for per-VIP leader election Leases.")
 	flag.DurationVar(&leaseDuration, "lease-duration", 15*time.Second, "VIP leader election lease duration.")
 	flag.DurationVar(&renewDeadline, "renew-deadline", 10*time.Second, "VIP leader election renew deadline.")
 	flag.DurationVar(&retryPeriod, "retry-period", 2*time.Second, "VIP leader election retry period.")
@@ -97,7 +97,7 @@ func main() {
 	reconciler := &speaker.Reconciler{
 		Client:         mgr.GetClient(),
 		KubeClient:     kubeClient,
-		Recorder:       mgr.GetEventRecorderFor("easylb-speaker"),
+		Recorder:       mgr.GetEventRecorderFor("l2keeper-speaker"),
 		Ctx:            ctx,
 		NodeName:       nodeName,
 		PodName:        podName,
@@ -125,7 +125,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctrl.Log.Info("starting easyLB speaker",
+	ctrl.Log.Info("starting L2Keeper speaker",
 		"node", nodeName,
 		"pod", podName,
 		"interface", interfaceName,

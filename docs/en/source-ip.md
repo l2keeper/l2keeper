@@ -4,7 +4,7 @@
 
 Client source IP preservation is determined by how the packet reaches the
 backend pod: DNAT, SNAT, routing, and `externalTrafficPolicy`. It is not
-something easyLB adds or removes.
+something L2Keeper adds or removes.
 
 ## Matrix
 
@@ -29,7 +29,7 @@ client -> VIP -> hostPort -> svclb pod
                               -> ingress sees the svclb pod IP
 ```
 
-easyLB publishes the VIP in the status. kube-proxy gets the address and performs
+L2Keeper publishes the VIP in the status. kube-proxy gets the address and performs
 DNAT itself, without an intermediate pod and without masquerading external
 clients under `Local`.
 
@@ -38,7 +38,7 @@ clients under `Local`.
 1. `externalTrafficPolicy: Local` on the Service.
 2. A Ready endpoint for that Service on the node that received the traffic.
    For ingress-nginx this is usually a DaemonSet on every node.
-3. For `l2`, the easyLB speaker only elects a leader on a node with a local
+3. For `l2`, the L2Keeper speaker only elects a leader on a node with a local
    Ready endpoint (when `Local`).
 4. For `external` VIPs, keepalived must keep the VIP on a node with a local
    endpoint. Otherwise `Local` traffic is dropped.

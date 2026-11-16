@@ -22,18 +22,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	easylv1alpha1 "github.com/bzdvdn/easylb/api/v1alpha1"
-	"github.com/bzdvdn/easylb/internal/filter"
-	"github.com/bzdvdn/easylb/internal/ipam"
-	"github.com/bzdvdn/easylb/internal/metrics"
+	l2keeperv1alpha1 "github.com/l2keeper/l2keeper/api/v1alpha1"
+	"github.com/l2keeper/l2keeper/internal/filter"
+	"github.com/l2keeper/l2keeper/internal/ipam"
+	"github.com/l2keeper/l2keeper/internal/metrics"
 )
 
 const (
 	autoBindingPrefix = "auto-"
-	autoBindingLabel  = "easylb.io/auto-binding"
-	autoBindingPool   = "easylb.io/pool"
+	autoBindingLabel  = "l2keeper.github.io/auto-binding"
+	autoBindingPool   = "l2keeper.github.io/pool"
 
-	autoAssignAnnotation = "easylb.io/auto-assign"
+	autoAssignAnnotation = "l2keeper.github.io/auto-assign"
 
 	metalLBPoolAnnotation           = "metallb.io/address-pool"
 	metalLBPoolAnnotationLegacy     = "metallb.universe.tf/address-pool"
@@ -71,7 +71,7 @@ func (r *ServiceAllocationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		Name:      autoBindingName(svc.Name),
 	}
 
-	var existing easylv1alpha1.VIPBinding
+	var existing l2keeperv1alpha1.VIPBinding
 	existingFound := true
 	if err := r.Get(ctx, autoKey, &existing); err != nil {
 		if client.IgnoreNotFound(err) != nil {
@@ -110,7 +110,7 @@ func (r *ServiceAllocationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, err
 	}
 
-	var pool *easylv1alpha1.VIPPool
+	var pool *l2keeperv1alpha1.VIPPool
 	var message string
 	if len(requested) > 0 || shared == nil {
 		pool, message, err = r.selectPool(ctx, &svc, requested)
@@ -164,12 +164,12 @@ func (r *ServiceAllocationReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	return ctrl.Result{RequeueAfter: r.RequeueAfter}, nil
 }
 
-func (r *ServiceAllocationReconciler) bindingsForService(ctx context.Context, svc *corev1.Service) ([]easylv1alpha1.VIPBinding, error) {
-	var list easylv1alpha1.VIPBindingList
+func (r *ServiceAllocationReconciler) bindingsForService(ctx context.Context, svc *corev1.Service) ([]l2keeperv1alpha1.VIPBinding, error) {
+	var list l2keeperv1alpha1.VIPBindingList
 	if err := r.List(ctx, &list, client.InNamespace(svc.Namespace)); err != nil {
 		return nil, err
 	}
-	out := make([]easylv1alpha1.VIPBinding, 0, len(list.Items))
+	out := make([]l2keeperv1alpha1.VIPBinding, 0, len(list.Items))
 	for i := range list.Items {
 		if list.Items[i].Spec.ServiceRef.Name == svc.Name {
 			out = append(out, list.Items[i])
@@ -178,9 +178,9 @@ func (r *ServiceAllocationReconciler) bindingsForService(ctx context.Context, sv
 	return out, nil
 }
 
-func (r *ServiceAllocationReconciler) selectPool(ctx context.Context, svc *corev1.Service, requested []string) (*easylv1alpha1.VIPPool, string, error) {
+func (r *ServiceAllocationReconciler) selectPool(ctx context.Context, svc *corev1.Service, requested []string) (*l2keeperv1alpha1.VIPPool, string, error) {
 	if name := poolAnnotation(svc); name != "" {
-		var pool easylv1alpha1.VIPPool
+		var pool l2keeperv1alpha1.VIPPool
 		if err := r.Get(ctx, types.NamespacedName{Name: name}, &pool); err != nil {
 			if client.IgnoreNotFound(err) == nil {
 				return nil, fmt.Sprintf("VIPPool %q not found", name), nil
@@ -190,7 +190,7 @@ func (r *ServiceAllocationReconciler) selectPool(ctx context.Context, svc *corev
 		return &pool, "", nil
 	}
 
-	var list easylv1alpha1.VIPPoolList
+	var list l2keeperv1alpha1.VIPPoolList
 	if err := r.List(ctx, &list); err != nil {
 		return nil, "", err
 	}
@@ -198,8 +198,8 @@ func (r *ServiceAllocationReconciler) selectPool(ctx context.Context, svc *corev
 		return list.Items[i].Name < list.Items[j].Name
 	})
 
-	var fallback *easylv1alpha1.VIPPool
-	var exhausted *easylv1alpha1.VIPPool
+	var fallback *l2keeperv1alpha1.VIPPool
+	var exhausted *l2keeperv1alpha1.VIPPool
 	for i := range list.Items {
 		pool := &list.Items[i]
 		if !pool.AutoAssignEnabled() {
@@ -240,7 +240,7 @@ func (r *ServiceAllocationReconciler) selectPool(ctx context.Context, svc *corev
 	return nil, "no VIPPool matches this Service", nil
 }
 
-func (r *ServiceAllocationReconciler) poolHasFreeAddress(ctx context.Context, pool *easylv1alpha1.VIPPool, exclude types.NamespacedName) (bool, error) {
+func (r *ServiceAllocationReconciler) poolHasFreeAddress(ctx context.Context, pool *l2keeperv1alpha1.VIPPool, exclude types.NamespacedName) (bool, error) {
 	addresses, err := ipam.Expand(pool.Spec.Addresses)
 	if err != nil {
 		return false, err
@@ -259,7 +259,7 @@ func (r *ServiceAllocationReconciler) poolHasFreeAddress(ctx context.Context, po
 }
 
 func (r *ServiceAllocationReconciler) usedAddresses(ctx context.Context, exclude types.NamespacedName) (map[netip.Addr]struct{}, error) {
-	var list easylv1alpha1.VIPBindingList
+	var list l2keeperv1alpha1.VIPBindingList
 	if err := r.List(ctx, &list); err != nil {
 		return nil, err
 	}
@@ -282,14 +282,14 @@ func (r *ServiceAllocationReconciler) usedAddresses(ctx context.Context, exclude
 type sharedAllocation struct {
 	ip       string
 	poolName string
-	mode     easylv1alpha1.VIPMode
+	mode     l2keeperv1alpha1.VIPMode
 }
 
 func (r *ServiceAllocationReconciler) findSharedAllocation(ctx context.Context, svc *corev1.Service, key string, self types.NamespacedName) (*sharedAllocation, error) {
 	if key == "" {
 		return nil, nil
 	}
-	var list easylv1alpha1.VIPBindingList
+	var list l2keeperv1alpha1.VIPBindingList
 	if err := r.List(ctx, &list); err != nil {
 		return nil, err
 	}
@@ -325,10 +325,10 @@ func (r *ServiceAllocationReconciler) findSharedAllocation(ctx context.Context, 
 		}
 		out := &sharedAllocation{ip: ip, mode: binding.Spec.Mode}
 		if out.mode == "" {
-			out.mode = easylv1alpha1.VIPModeL2
+			out.mode = l2keeperv1alpha1.VIPModeL2
 		}
 		if binding.Spec.PoolRef != nil {
-			var pool easylv1alpha1.VIPPool
+			var pool l2keeperv1alpha1.VIPPool
 			if err := r.Get(ctx, types.NamespacedName{Name: binding.Spec.PoolRef.Name}, &pool); err == nil &&
 				poolContainsIP(&pool, ip) {
 				out.poolName = pool.Name
@@ -339,14 +339,14 @@ func (r *ServiceAllocationReconciler) findSharedAllocation(ctx context.Context, 
 	return nil, nil
 }
 
-func bindingBefore(binding *easylv1alpha1.VIPBinding, key types.NamespacedName) bool {
+func bindingBefore(binding *l2keeperv1alpha1.VIPBinding, key types.NamespacedName) bool {
 	if binding.Namespace == key.Namespace {
 		return binding.Name < key.Name
 	}
 	return binding.Namespace < key.Namespace
 }
 
-func (r *ServiceAllocationReconciler) bindingService(ctx context.Context, binding *easylv1alpha1.VIPBinding) (*corev1.Service, error) {
+func (r *ServiceAllocationReconciler) bindingService(ctx context.Context, binding *l2keeperv1alpha1.VIPBinding) (*corev1.Service, error) {
 	if binding.Spec.ServiceRef.Name == "" {
 		return nil, nil
 	}
@@ -382,7 +382,7 @@ func serviceSharingKey(svc *corev1.Service) string {
 	)
 }
 
-func poolMatchesService(ctx context.Context, c client.Client, pool *easylv1alpha1.VIPPool, svc *corev1.Service) (bool, error) {
+func poolMatchesService(ctx context.Context, c client.Client, pool *l2keeperv1alpha1.VIPPool, svc *corev1.Service) (bool, error) {
 	allocation := pool.Spec.ServiceAllocation
 	if allocation == nil {
 		return true, nil
@@ -415,7 +415,7 @@ func poolMatchesService(ctx context.Context, c client.Client, pool *easylv1alpha
 	return true, nil
 }
 
-func poolContainsIP(pool *easylv1alpha1.VIPPool, raw string) bool {
+func poolContainsIP(pool *l2keeperv1alpha1.VIPPool, raw string) bool {
 	target, err := netip.ParseAddr(raw)
 	if err != nil {
 		return false
@@ -479,26 +479,26 @@ func firstNonEmpty(values ...string) string {
 	return ""
 }
 
-func desiredAutoBinding(svc *corev1.Service, name string, pool *easylv1alpha1.VIPPool, requested []string, shared *sharedAllocation) *easylv1alpha1.VIPBinding {
+func desiredAutoBinding(svc *corev1.Service, name string, pool *l2keeperv1alpha1.VIPPool, requested []string, shared *sharedAllocation) *l2keeperv1alpha1.VIPBinding {
 	labels := map[string]string{
-		"app.kubernetes.io/managed-by": "easylb",
+		"app.kubernetes.io/managed-by": "l2keeper",
 		autoBindingLabel:               "true",
 	}
-	mode := easylv1alpha1.VIPModeL2
+	mode := l2keeperv1alpha1.VIPModeL2
 	if pool != nil {
 		labels[autoBindingPool] = pool.Name
 		mode = pool.ModeOrDefault()
 	}
 
-	spec := easylv1alpha1.VIPBindingSpec{
-		ServiceRef: easylv1alpha1.ServiceReference{Name: svc.Name},
+	spec := l2keeperv1alpha1.VIPBindingSpec{
+		ServiceRef: l2keeperv1alpha1.ServiceReference{Name: svc.Name},
 		Mode:       mode,
 		SharingKey: serviceSharingKey(svc),
 	}
 	switch {
 	case len(requested) > 0:
 		if pool != nil && len(requested) == 1 && poolContainsIP(pool, requested[0]) {
-			spec.PoolRef = &easylv1alpha1.PoolReference{Name: pool.Name}
+			spec.PoolRef = &l2keeperv1alpha1.PoolReference{Name: pool.Name}
 			spec.RequestedIP = requested[0]
 		} else {
 			spec.VIPs = append([]string(nil), requested...)
@@ -508,19 +508,19 @@ func desiredAutoBinding(svc *corev1.Service, name string, pool *easylv1alpha1.VI
 			spec.Mode = shared.mode
 		}
 		if shared.poolName != "" {
-			spec.PoolRef = &easylv1alpha1.PoolReference{Name: shared.poolName}
+			spec.PoolRef = &l2keeperv1alpha1.PoolReference{Name: shared.poolName}
 			spec.RequestedIP = shared.ip
 			labels[autoBindingPool] = shared.poolName
 		} else {
 			spec.VIPs = []string{shared.ip}
 		}
 	case pool != nil:
-		spec.PoolRef = &easylv1alpha1.PoolReference{Name: pool.Name}
+		spec.PoolRef = &l2keeperv1alpha1.PoolReference{Name: pool.Name}
 	default:
 		spec.VIPs = append([]string(nil), requested...)
 	}
 
-	return &easylv1alpha1.VIPBinding{
+	return &l2keeperv1alpha1.VIPBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: svc.Namespace,
@@ -558,11 +558,11 @@ func autoBindingName(serviceName string) string {
 	return prefix + serviceName
 }
 
-func isAutoBinding(binding *easylv1alpha1.VIPBinding) bool {
+func isAutoBinding(binding *l2keeperv1alpha1.VIPBinding) bool {
 	return binding.Labels[autoBindingLabel] == "true"
 }
 
-func ownedByService(binding *easylv1alpha1.VIPBinding, svc *corev1.Service) bool {
+func ownedByService(binding *l2keeperv1alpha1.VIPBinding, svc *corev1.Service) bool {
 	for _, ref := range binding.OwnerReferences {
 		if ref.Kind == "Service" && ref.Name == svc.Name {
 			return true
@@ -572,7 +572,7 @@ func ownedByService(binding *easylv1alpha1.VIPBinding, svc *corev1.Service) bool
 }
 
 func (r *ServiceAllocationReconciler) deleteAutoBinding(ctx context.Context, namespace, name string) error {
-	var binding easylv1alpha1.VIPBinding
+	var binding l2keeperv1alpha1.VIPBinding
 	if err := r.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, &binding); err != nil {
 		return client.IgnoreNotFound(err)
 	}
@@ -587,7 +587,7 @@ func (r *ServiceAllocationReconciler) deleteAutoBinding(ctx context.Context, nam
 }
 
 func (r *ServiceAllocationReconciler) deleteAutoBindingIfOwned(ctx context.Context, svc *corev1.Service, key types.NamespacedName) error {
-	var binding easylv1alpha1.VIPBinding
+	var binding l2keeperv1alpha1.VIPBinding
 	if err := r.Get(ctx, key, &binding); err != nil {
 		return client.IgnoreNotFound(err)
 	}
@@ -614,9 +614,9 @@ func (r *ServiceAllocationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named("service-allocation").
 		For(&corev1.Service{}).
-		Watches(&easylv1alpha1.VIPPool{},
+		Watches(&l2keeperv1alpha1.VIPPool{},
 			handler.EnqueueRequestsFromMapFunc(r.servicesForPool)).
-		Watches(&easylv1alpha1.VIPBinding{},
+		Watches(&l2keeperv1alpha1.VIPBinding{},
 			handler.EnqueueRequestsFromMapFunc(r.serviceForBinding)).
 		Watches(&corev1.Namespace{},
 			handler.EnqueueRequestsFromMapFunc(r.servicesForNamespace)).
@@ -659,7 +659,7 @@ func (r *ServiceAllocationReconciler) servicesForNamespace(ctx context.Context, 
 }
 
 func (r *ServiceAllocationReconciler) serviceForBinding(_ context.Context, obj client.Object) []reconcile.Request {
-	binding, ok := obj.(*easylv1alpha1.VIPBinding)
+	binding, ok := obj.(*l2keeperv1alpha1.VIPBinding)
 	if !ok || binding.Spec.ServiceRef.Name == "" {
 		return nil
 	}

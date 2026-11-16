@@ -15,7 +15,7 @@ VIP нужно настраивать, не меняя ingress-nginx или data
 
 ## Варианты
 
-1. Аннотации на Service (`easylb.io/vips`, `easylb.io/vip-config`).
+1. Аннотации на Service (`l2keeper.github.io/vips`, `l2keeper.github.io/vip-config`).
 2. ConfigMap с глобальным списком VIP.
 3. CRD `VIPPool` и `VIPBinding`.
 

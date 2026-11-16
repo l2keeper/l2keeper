@@ -2,7 +2,7 @@
 
 **English** | [Русский](../ru/architecture.md)
 
-easyLB is a control-plane controller plus an optional per-node L2 speaker. It
+L2Keeper is a control-plane controller plus an optional per-node L2 speaker. It
 does not proxy packets: DNAT and load balancing are performed by kube-proxy,
 exactly as for any Kubernetes Service.
 
@@ -13,7 +13,7 @@ exactly as for any Kubernetes Service.
                          │
         ┌────────────────┴────────────────┐
         │                                 │
-  easyLB controller                 easyLB speaker
+  L2Keeper controller                 L2Keeper speaker
   (Deployment, 2 replicas)           (DaemonSet, hostNetwork)
         │                                 │
         │ VIPPool / VIPBinding             │ Lease per VIPBinding
@@ -27,8 +27,8 @@ exactly as for any Kubernetes Service.
 
 ### Controller
 
-A Deployment in `easylb-system` with 2 replicas and leader election through the
-`easylb.io` Lease. Only the leader is active.
+A Deployment in `l2keeper-system` with 2 replicas and leader election through the
+`l2keeper.github.io` Lease. Only the leader is active.
 
 Watches:
 
@@ -92,7 +92,7 @@ handled by kube-proxy via `KUBE-EXT` rules.
 ### Gateway API
 
 Gateway API implementations expose a data-plane `Service` of type
-`LoadBalancer`. easyLB manages that Service like ingress-nginx. With the
+`LoadBalancer`. L2Keeper manages that Service like ingress-nginx. With the
 optional `--enable-gateway-api` integration, a `Gateway` can also be translated
 into a `VIPBinding`; see [gateway-api.md](gateway-api.md).
 
@@ -105,12 +105,12 @@ kube-proxy on every node:
 - DNATs to an endpoint;
 - maintains conntrack.
 
-easyLB adds no netfilter rules and is not on the packet path. Therefore:
+L2Keeper adds no netfilter rules and is not on the packet path. Therefore:
 
 - restarting the controller or speaker does not break established connections;
 - long TCP/stream sessions live according to conntrack/kube-proxy timeouts;
 - when the VIP owner node or the backend pod fails, established sessions break
-  — a property of any L4 VIP, not of easyLB.
+  — a property of any L4 VIP, not of L2Keeper.
 
 ### Keepalived
 
@@ -120,7 +120,7 @@ In `external` mode, keepalived remains the VIP owner:
 - performs VRRP/ARP;
 - moves the VIP between nodes.
 
-easyLB only publishes the VIP in the Service status. The VIP owner node must
+L2Keeper only publishes the VIP in the Service status. The VIP owner node must
 have a local ingress endpoint; otherwise `Local` traffic is dropped. A
 `vrrp_script` checking the Service's `healthCheckNodePort` is recommended (see
 [source-ip.md](source-ip.md)).
@@ -146,7 +146,7 @@ DNS -> VIP:443
        -> client source IP
 ```
 
-### L2 VIP (easyLB speaker)
+### L2 VIP (L2Keeper speaker)
 
 ```text
 DNS -> VIP:443
@@ -165,8 +165,8 @@ One VIP has exactly one owner:
 | Mode | Owner | Configured in |
 |---|---|---|
 | `external` | keepalived/administrator | keepalived + `VIPBinding(mode: external)` |
-| `l2` | easyLB speaker | `VIPBinding(mode: l2)` |
-| `bgp` | future easyLB speaker | reserved |
+| `l2` | L2Keeper speaker | `VIPBinding(mode: l2)` |
+| `bgp` | future L2Keeper speaker | reserved |
 
 The same VIP must not be held by both keepalived and `mode: l2`. The speaker
 only checks the local interface on the leader node, so cross-node conflicts must
@@ -176,7 +176,7 @@ be avoided by configuration.
 
 ### Controller
 
-- 2 replicas, leader election (`Lease easylb.io`, `easylb-system`);
+- 2 replicas, leader election (`Lease l2keeper.github.io`, `l2keeper-system`);
 - PDB `minAvailable: 1`, spreading by `kubernetes.io/hostname`;
 - rolling update `maxUnavailable: 0`, `maxSurge: 1`;
 - `LeaderElectionReleaseOnCancel: true`;
@@ -199,11 +199,11 @@ owner.
 ### Dataplane
 
 kube-proxy and conntrack are standard k3s components. Their availability is the
-cluster's responsibility, not easyLB's.
+cluster's responsibility, not L2Keeper's.
 
 ## Namespaces, RBAC, CRDs
 
-- `easylb-system` — controller, speaker, Leases.
+- `l2keeper-system` — controller, speaker, Leases.
 - `VIPPool` — cluster-scoped.
 - `VIPBinding` — namespaced, usually in the Service namespace.
 - Controller RBAC: services/status, nodes, endpointslices, events, leases,

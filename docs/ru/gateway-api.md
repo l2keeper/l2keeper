@@ -2,15 +2,15 @@
 
 [English](../en/gateway-api.md) | **Русский**
 
-easyLB — это LoadBalancer controller для **Service**, а не реализация Gateway
+L2Keeper — это LoadBalancer controller для **Service**, а не реализация Gateway
 API. Он не реализует L7-роутинг и не смотрит `GatewayClass`, `HTTPRoute`,
 `GRPCRoute` или `TLSRoute`. Он работает с теми реализациями Gateway API,
 которые поднимают data-plane через Kubernetes `Service` типа `LoadBalancer` —
 а так делают почти все.
 
-С опциональной нативной интеграцией (`gatewayAPI.enabled: true`) easyLB также
+С опциональной нативной интеграцией (`gatewayAPI.enabled: true`) L2Keeper также
 смотрит `Gateway` в стабильном API `gateway.networking.k8s.io/v1` и превращает
-его в `VIPBinding`. Он читает только IP-значения и аннотации `easylb.io/*`,
+его в `VIPBinding`. Он читает только IP-значения и аннотации `l2keeper.github.io/*`,
 `Gateway.status` никогда не пишет.
 
 ## Как это устроено
@@ -25,41 +25,41 @@ Cilium, Traefik, Kong, Istio, ...)
         ▼
 data-plane Service (type: LoadBalancer)
         │
-        ├── easyLB публикует NodeIP/VIP в status.loadBalancer.ingress
-        └── easyLB speaker анонсирует VIP с mode: l2
+        ├── L2Keeper публикует NodeIP/VIP в status.loadBalancer.ingress
+        └── L2Keeper speaker анонсирует VIP с mode: l2
         │
         ▼
 kube-proxy -> поды gateway -> HTTPRoute/GRPCRoute backends
 ```
 
-easyLB отвечает только за L4-адреса data-plane Service. L7-роутинг остаётся
+L2Keeper отвечает только за L4-адреса data-plane Service. L7-роутинг остаётся
 ответственностью реализации Gateway API.
 
 ## Поддерживаемые версии
 
-- easyLB смотрит `Gateway` только через `gateway.networking.k8s.io/v1`. Подойдёт
+- L2Keeper смотрит `Gateway` только через `gateway.networking.k8s.io/v1`. Подойдёт
   любой бандл Gateway API, который отдаёт `v1` `Gateway` (v1.0.0 и новее).
   Кластеры, где есть только `v1beta1`/`v1alpha2` Gateway CRD, нативной
   интеграцией не поддерживаются — создавай `VIPBinding` вручную.
 - Controller работает через `unstructured` и читает только
   `spec.addresses[].value` для записей с `type: IPAddress` и аннотации
-  `easylb.io/*`. Новые поля, новые типы адресов и новые ресурсы игнорируются,
+  `l2keeper.github.io/*`. Новые поля, новые типы адресов и новые ресурсы игнорируются,
   а не ломают reconcile.
 - Новый релиз Gateway API может требовать новый Kubernetes. Gateway API
   **v1.5+** использует `ValidatingAdmissionPolicy` и CEL `isIP` и требует
   Kubernetes **1.31+**. На старых кластерах ставь **v1.4.1** (или v1.0.0,
   официально поддерживающую k8s 1.25), если она отдаёт `v1` API.
 - Новые ресурсы Gateway API (`ListenerSet`, `BackendTLSPolicy`, `TLSRoute`,
-  `XBackend` и т.п.) easyLB не интерпретирует. Они могут работать внутри
-  реализации Gateway; easyLB управляет только data-plane `Service`.
+  `XBackend` и т.п.) L2Keeper не интерпретирует. Они могут работать внутри
+  реализации Gateway; L2Keeper управляет только data-plane `Service`.
 - Поддерживаются все реализации, которые создают `Service` типа
   `LoadBalancer` для data-plane (Envoy Gateway, NGINX Gateway Fabric, Cilium,
   Traefik, Kong, Istio, ...). Implementation-специфичного кода нет.
 
 Controller'у нужен `controller.requireClass: false`, если data-plane Service
 без `loadBalancerClass` (обычный случай для Gateway-реализаций). При
-`requireClass: false` easyLB берёт **все** `LoadBalancer` Service без класса,
-поэтому используй это только если easyLB — единственный такой controller в
+`requireClass: false` L2Keeper берёт **все** `LoadBalancer` Service без класса,
+поэтому используй это только если L2Keeper — единственный такой controller в
 кластере, либо задай класс на data-plane Service.
 
 ## Тестирование без кластера
@@ -72,7 +72,7 @@ go test ./internal/controller -run Gateway -v
 ```
 
 Тесты собирают `Gateway` в форме релизов Gateway API v1.0, v1.2, v1.4, v1.5 и
-v1.7, добавляют неизвестные будущие поля и ресурсы и проверяют, что easyLB
+v1.7, добавляют неизвестные будущие поля и ресурсы и проверяют, что L2Keeper
 по-прежнему создаёт правильный binding, соблюдает приоритет
 адресов/пула, игнорирует `status.addresses`, не перезаписывает чужой binding и
 отклоняет неверный `vip-mode`. Это проверяет логику controller'а, но не
@@ -93,7 +93,7 @@ Kubernetes/Gateway API всё равно прогони end-to-end провер�
 Минимальный `VIPBinding`:
 
 ```yaml
-apiVersion: easylb.io/v1alpha1
+apiVersion: l2keeper.github.io/v1alpha1
 kind: VIPBinding
 metadata:
   name: gateway-keepalived
@@ -109,10 +109,10 @@ spec:
 Или с пулом и L2-speaker:
 
 ```yaml
-apiVersion: easylb.io/v1alpha1
+apiVersion: l2keeper.github.io/v1alpha1
 kind: VIPBinding
 metadata:
-  name: gateway-easylb
+  name: gateway-l2keeper
   namespace: gateway-system
 spec:
   serviceRef:
@@ -126,7 +126,7 @@ spec:
 
 ```yaml
 bindings:
-  gateway-easylb:
+  gateway-l2keeper:
     namespace: gateway-system
     serviceRef: <data-plane-service>
     mode: l2
@@ -135,7 +135,7 @@ bindings:
 
 ## Нативная интеграция (опционально)
 
-Вместо ручного создания `VIPBinding` можно позволить easyLB преобразовать
+Вместо ручного создания `VIPBinding` можно позволить L2Keeper преобразовать
 `Gateway` в `VIPBinding`.
 
 Включение:
@@ -147,13 +147,13 @@ bindings:
 
 | Аннотация | Обязательна | Значение |
 |---|---|---|
-| `easylb.io/service` | да | имя data-plane `Service` |
-| `easylb.io/vip-mode` | нет | `external` (по умолчанию) или `l2` |
-| `easylb.io/vip-pool` | нет | имя `VIPPool`, если IP не заданы |
-| `easylb.io/vips` | нет | fallback-список VIP через запятую |
+| `l2keeper.github.io/service` | да | имя data-plane `Service` |
+| `l2keeper.github.io/vip-mode` | нет | `external` (по умолчанию) или `l2` |
+| `l2keeper.github.io/vip-pool` | нет | имя `VIPPool`, если IP не заданы |
+| `l2keeper.github.io/vips` | нет | fallback-список VIP через запятую |
 
 4. IP-адреса указывать в `Gateway.spec.addresses` с `type: IPAddress`. Если
-   адресов нет, используются `easylb.io/vip-pool` или `easylb.io/vips`.
+   адресов нет, используются `l2keeper.github.io/vip-pool` или `l2keeper.github.io/vips`.
 
 Пример с явным адресом:
 
@@ -164,8 +164,8 @@ metadata:
   name: public
   namespace: gateway-system
   annotations:
-    easylb.io/service: envoy-public-abc123
-    easylb.io/vip-mode: l2
+    l2keeper.github.io/service: envoy-public-abc123
+    l2keeper.github.io/vip-mode: l2
 spec:
   gatewayClassName: envoy-gateway
   addresses:
@@ -182,9 +182,9 @@ spec:
 ```yaml
 metadata:
   annotations:
-    easylb.io/service: envoy-public-abc123
-    easylb.io/vip-mode: l2
-    easylb.io/vip-pool: gateway-vips
+    l2keeper.github.io/service: envoy-public-abc123
+    l2keeper.github.io/vip-mode: l2
+    l2keeper.github.io/vip-pool: gateway-vips
 ```
 
 Controller создаёт `VIPBinding` с именем `gateway-<gateway-name>` в namespace
@@ -195,10 +195,10 @@ Gateway и ownerReference на Gateway. Binding обновляется при и
 
 Важно:
 
-- без аннотации `easylb.io/service` binding не создаётся;
-- `Gateway.status.addresses` easyLB не пишет;
+- без аннотации `l2keeper.github.io/service` binding не создаётся;
+- `Gateway.status.addresses` L2Keeper не пишет;
 - если реализация Gateway сама владеет `spec.addresses`, не включай для неё
-  интеграцию easyLB — один VIP, один владелец;
+  интеграцию L2Keeper — один VIP, один владелец;
 - если включить `gatewayAPI.enabled` без установленных Gateway API v1 CRD,
   controller не запустится: watch на Gateway не сможет синхронизироваться.
 - автоаллокация (`auto-<service>`) пропускается, если для Service уже есть
@@ -237,13 +237,13 @@ kubectl -n <gateway-namespace> get endpoints <data-plane-service>
 На один VIP должен быть один владелец:
 
 - если реализация сама умеет `Gateway.spec.addresses` и публикует адрес,
-  easyLB для этого Gateway может быть не нужен;
+  L2Keeper для этого Gateway может быть не нужен;
 - если реализация ожидает внешний Service LB controller — используй
   `VIPBinding` и **не** задавай одновременно `Gateway.spec.addresses`;
 - не настраивай оба механизма сразу: они начнут спорить за адрес или дадут
   противоречивый статус.
 
-При включённой нативной интеграции easyLB читает IP-значения из
+При включённой нативной интеграции L2Keeper читает IP-значения из
 `Gateway.spec.addresses`, но никогда не пишет `Gateway.spec.addresses` и
 `Gateway.status.addresses`.
 
@@ -256,7 +256,7 @@ kubectl -n <gateway-namespace> get endpoints <data-plane-service>
 - DaemonSet-подобный data plane (под на каждой ноде) — самый простой вариант.
 - Deployment с несколькими репликами может оставить ноды без локального
   endpoint; при `Local` трафик на VIP на таких нодах будет дропаться.
-- Для `mode: l2` easyLB speaker выбирает лидером только ноду с локальным
+- Для `mode: l2` L2Keeper speaker выбирает лидером только ноду с локальным
   endpoint (при `Local`), поэтому VIP приезжает туда, где есть под gateway.
 - Для `mode: external` keepalived может перевести VIP на ноду без пода gateway.
   Используй `vrrp_script` на `healthCheckNodePort` сервиса, чтобы понижать
@@ -268,7 +268,7 @@ kubectl -n <gateway-namespace> get endpoints <data-plane-service>
 kubectl get gateway -A
 kubectl -n <gateway-namespace> get svc <data-plane-service> -o wide
 kubectl get vipbinding -A
-kubectl -n easylb-system logs ds/easylb-speaker --tail=100
+kubectl -n l2keeper-system logs ds/l2keeper-speaker --tail=100
 
 curl -k --resolve example.com:443:<VIP> https://example.com/
 ```
@@ -282,10 +282,10 @@ nc -vz <VIP> 443
 
 ## Ограничения
 
-- easyLB не реализует Gateway API, а управляет только data-plane Service.
+- L2Keeper не реализует Gateway API, а управляет только data-plane Service.
 - Нет enforcement `loadBalancerSourceRanges`.
 - BGP пока нет.
 - Имя data-plane Service может измениться при обновлении реализации Gateway;
   после апгрейда проверяй `VIPBinding`.
 - Один VIP — один владелец. Нельзя одновременно держать один VIP на
-  keepalived, easyLB `mode: l2`, MetalLB и собственном LB реализации Gateway.
+  keepalived, L2Keeper `mode: l2`, MetalLB и собственном LB реализации Gateway.

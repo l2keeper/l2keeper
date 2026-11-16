@@ -4,10 +4,10 @@
 
 | Version | Supported |
 |---|---|
-| `0.1.x` | yes |
+| `0.2.x` | yes |
 | older | no |
 
-easyLB is pre-1.0. Security fixes are made on `main` and the latest release.
+L2Keeper is pre-1.0. Security fixes are made on `main` and the latest release.
 
 ## Reporting a vulnerability
 
@@ -24,7 +24,7 @@ Report privately through GitHub Security Advisories:
    - reproduction steps and expected impact;
    - relevant logs with secrets removed.
 
-If private advisories are unavailable, contact [@bzdvdn](https://github.com/bzdvdn)
+If private advisories are unavailable, contact [@l2keeper](https://github.com/l2keeper)
 on GitHub and ask for a private channel before sharing details.
 
 ## Scope

@@ -3,9 +3,9 @@
 # The Service itself is not annotated: VIP configuration lives in VIPBinding.
 # VIPs with mode: external are managed by keepalived/administrators and are
 # only published into status.loadBalancer.ingress. VIPs with mode: l2 are
-# advertised by the easyLB speaker.
+# advertised by the L2Keeper speaker.
 ---
-apiVersion: easylb.io/v1alpha1
+apiVersion: l2keeper.github.io/v1alpha1
 kind: VIPPool
 metadata:
   name: ingress-vips
@@ -14,7 +14,7 @@ spec:
     - 192.168.56.240-192.168.56.250
   autoAssign: true
 ---
-apiVersion: easylb.io/v1alpha1
+apiVersion: l2keeper.github.io/v1alpha1
 kind: VIPBinding
 metadata:
   name: ingress-nginx

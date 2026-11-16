@@ -2,9 +2,9 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "easylb.fullname" . }}-controller
+  name: {{ include "l2keeper.fullname" . }}-controller
   labels:
-    {{- include "easylb.labels" . | nindent 4 }}
+    {{- include "l2keeper.labels" . | nindent 4 }}
     app.kubernetes.io/component: controller
 rules:
   - apiGroups: [""]
@@ -28,13 +28,13 @@ rules:
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
     verbs: ["get", "list", "watch", "create", "update", "patch"]
-  - apiGroups: ["easylb.io"]
+  - apiGroups: ["l2keeper.github.io"]
     resources: ["vipbindings"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  - apiGroups: ["easylb.io"]
+  - apiGroups: ["l2keeper.github.io"]
     resources: ["vippools"]
     verbs: ["get", "list", "watch"]
-  - apiGroups: ["easylb.io"]
+  - apiGroups: ["l2keeper.github.io"]
     resources: ["vipbindings/status"]
     verbs: ["get", "patch", "update"]
   - apiGroups: ["gateway.networking.k8s.io"]

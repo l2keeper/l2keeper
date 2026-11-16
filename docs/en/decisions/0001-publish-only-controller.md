@@ -31,7 +31,7 @@ Option 3: a publish-only controller.
 - Fixes the root cause: kube-proxy did not know the VIP.
 - No extra hop, no pod in the packet path, no `NET_ADMIN` in the controller.
 - Existing traffic path and conntrack semantics stay standard.
-- Keepalived continues to own VIPs; easyLB only publishes them.
+- Keepalived continues to own VIPs; L2Keeper only publishes them.
 
 ## Consequences
 

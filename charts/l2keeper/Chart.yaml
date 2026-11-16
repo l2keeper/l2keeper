@@ -1,17 +1,17 @@
 apiVersion: v2
-name: easylb
+name: l2keeper
 description: Lightweight Kubernetes LoadBalancer and ServiceLB/MetalLB L2 alternative for bare-metal, on-prem, k3s and RKE2
 type: application
-version: 0.1.3
-appVersion: "0.1.3"
+version: 0.2.0
+appVersion: "0.2.0"
 kubeVersion: ">=1.24.0-0"
-home: https://bzdvdn.github.io/easylb/
-icon: https://raw.githubusercontent.com/bzdvdn/easylb/master/docs/assets/easylb-icon.svg
+home: https://l2keeper.github.io/l2keeper/
+icon: https://raw.githubusercontent.com/l2keeper/l2keeper/master/docs/assets/l2keeper-icon.svg
 sources:
-  - https://github.com/bzdvdn/easylb
+  - https://github.com/l2keeper/l2keeper
 maintainers:
-  - name: bzdvdn
-    url: https://github.com/bzdvdn
+  - name: l2keeper
+    url: https://github.com/l2keeper
 keywords:
   - kubernetes
   - loadbalancer

@@ -1,4 +1,4 @@
-module github.com/bzdvdn/easylb
+module github.com/l2keeper/l2keeper
 
 go 1.26.0
 

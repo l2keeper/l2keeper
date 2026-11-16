@@ -5,12 +5,12 @@
 ## First checks
 
 ```bash
-kubectl -n easylb-system get deploy,ds,pods -o wide
+kubectl -n l2keeper-system get deploy,ds,pods -o wide
 kubectl get vippool
 kubectl get vipbinding -A -o wide
 kubectl get vipbinding -A -o yaml
 kubectl -n ingress-nginx get svc my-release-ingress-nginx-controller -o wide
-kubectl -n easylb-system get lease
+kubectl -n l2keeper-system get lease
 ```
 
 Decision tree:
@@ -38,12 +38,12 @@ Decision tree:
 - Check controller logs:
 
   ```bash
-  kubectl -n easylb-system logs deploy/easylb-controller --tail=200
+  kubectl -n l2keeper-system logs deploy/l2keeper-controller --tail=200
   ```
 
 - Check `VIPBinding` conditions (`Ready`, `reason`).
 - Check `publishNodeIPs` and `nodeIPTypes` if node IPs are missing.
-- If the Service has a non-easyLB `loadBalancerClass`, the controller ignores
+- If the Service has a non-L2Keeper `loadBalancerClass`, the controller ignores
   it. Check:
 
   ```bash
@@ -67,8 +67,8 @@ Decision tree:
 ## Speaker pod is not ready / crashloops
 
 ```bash
-kubectl -n easylb-system describe pod -l app.kubernetes.io/component=speaker
-kubectl -n easylb-system logs ds/easylb-speaker --tail=200
+kubectl -n l2keeper-system describe pod -l app.kubernetes.io/component=speaker
+kubectl -n l2keeper-system logs ds/l2keeper-speaker --tail=200
 ```
 
 Common causes:
@@ -77,7 +77,7 @@ Common causes:
   root with `NET_RAW`. Check:
 
   ```bash
-  kubectl -n easylb-system get ds easylb-speaker \
+  kubectl -n l2keeper-system get ds l2keeper-speaker \
     -o jsonpath='{.spec.template.spec.securityContext}{"\n"}'
   ```
 
@@ -87,7 +87,7 @@ Common causes:
 - `no interface owns address`: the node `InternalIP` is not on any interface or
   `nodeIPType` is wrong. Set `speaker.interface` explicitly or fix the node IP.
 - Lease/leader election errors: check RBAC for Leases and the
-  `easylb-system` namespace.
+  `l2keeper-system` namespace.
 - Port conflicts on `8082`/`8083` in hostNetwork: check the node.
 
 ## `VIPAlreadyAssigned`
@@ -160,7 +160,7 @@ speaker, a graceful shutdown releases the Lease immediately; after a hard crash
 it expires after `leaseDuration` (15s). If it is stale longer, delete it:
 
 ```bash
-kubectl -n easylb-system delete lease <lease-name>
+kubectl -n l2keeper-system delete lease <lease-name>
 ```
 
 A current speaker recreates it.
@@ -170,15 +170,15 @@ A current speaker recreates it.
 - `no matches for kind "VIPBinding"`: install `deploy/crds.yaml` or the Helm
   chart first.
 - `helm upgrade` does not update CRDs from `crds/`; apply them separately.
-- Ownership conflict with old static manifests: delete `deploy/easylb.yaml` and
-  `deploy/easylb-speaker.yaml` resources before using the chart.
+- Ownership conflict with old static manifests: delete `deploy/l2keeper.yaml` and
+  `deploy/l2keeper-speaker.yaml` resources before using the chart.
 - `no matches for kind "ServiceMonitor"`: set
   `metrics.serviceMonitor.enabled: false` or install Prometheus Operator CRDs.
 
 ## Automatic allocation
 
 - No `auto-<service>` binding: check that `controller.autoAssignServices` is
-  true, the Service is a managed `LoadBalancer`, `easylb.io/auto-assign` is not
+  true, the Service is a managed `LoadBalancer`, `l2keeper.github.io/auto-assign` is not
   `"false"`, and at least one `VIPPool` with `autoAssign: true` matches the
   Service selectors.
 - An explicit `VIPBinding` exists: manual and Gateway-created bindings take
@@ -199,7 +199,7 @@ A current speaker recreates it.
   or `undeclared reference to 'isIP'`: the Gateway API release is too new for
   the cluster. v1.5+ requires Kubernetes 1.31+. Delete the partially installed
   `gateway.networking.k8s.io` CRDs, then install v1.4.1, or upgrade Kubernetes.
-- No VIPBinding created: check the `easylb.io/service` annotation, the
+- No VIPBinding created: check the `l2keeper.github.io/service` annotation, the
   `Gateway.spec.addresses`, and whether the controller actually runs with
   `--enable-gateway-api=true`.
 - A VIPBinding exists but the Service has no VIP: the data-plane Service has no
@@ -220,9 +220,9 @@ A current speaker recreates it.
 ## Useful commands
 
 ```bash
-kubectl -n easylb-system logs deploy/easylb-controller --tail=200
-kubectl -n easylb-system logs ds/easylb-speaker --tail=200
-kubectl -n easylb-system get lease -o yaml
+kubectl -n l2keeper-system logs deploy/l2keeper-controller --tail=200
+kubectl -n l2keeper-system logs ds/l2keeper-speaker --tail=200
+kubectl -n l2keeper-system get lease -o yaml
 kubectl get vipbinding -A -o yaml
 kubectl -n ingress-nginx get endpoints <service>
 kubectl get events -A --sort-by=.lastTimestamp | tail -30

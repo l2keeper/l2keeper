@@ -1,10 +1,24 @@
 # Changelog
 
-All notable changes to easyLB are documented here. The format is based on
+All notable changes to L2Keeper are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 semantic versioning once it reaches 1.0.
 
 ## [Unreleased]
+
+## [0.2.0] - 2026-11-16
+
+### Changed
+
+- Renamed the project from easyLB to **L2Keeper**.
+- New CRD API group: `l2keeper.github.io` (previously `easylb.io`).
+- New Go module/repository: `github.com/l2keeper/l2keeper`.
+- New image and chart names: `ghcr.io/l2keeper/l2keeper` and
+  `ghcr.io/l2keeper/charts/l2keeper`.
+- Default namespace is now `l2keeper-system`; `loadBalancerClass` is
+  `l2keeper.github.io/lb`.
+- Annotation and label prefix is now `l2keeper.github.io/*`.
+- Prometheus metric prefix is now `l2keeper_*`.
 
 ## [0.1.3] - 2026-11-12
 
@@ -52,7 +66,7 @@ Initial public release.
 
 ### Added
 
-- easyLB controller publishing node IPs and VIPs into
+- L2Keeper controller publishing node IPs and VIPs into
   `Service.status.loadBalancer.ingress`.
 - `VIPPool` and `VIPBinding` CRDs with explicit VIPs, pool allocation, and
   `requestedIP`.

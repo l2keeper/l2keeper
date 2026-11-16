@@ -9,7 +9,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/mdlayher/arp"
 
-	"github.com/bzdvdn/easylb/internal/metrics"
+	"github.com/l2keeper/l2keeper/internal/metrics"
 )
 
 var broadcastHardwareAddr = net.HardwareAddr{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}

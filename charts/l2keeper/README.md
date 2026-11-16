@@ -1,27 +1,27 @@
-# easyLB Helm chart
+# L2Keeper Helm chart
 
 A lightweight Kubernetes LoadBalancer controller for on-prem, k3s and RKE2
-clusters. easyLB publishes node IPs and VIPs into
+clusters. L2Keeper publishes node IPs and VIPs into
 `Service.status.loadBalancer.ingress` and leaves the dataplane to kube-proxy.
 
 It is a drop-in replacement for the k3s/RKE2 ServiceLB and for MetalLB's L2
 mode in small bare-metal clusters that do not need BGP. VIPs can be external
-(keepalived/VRRP, a hardware LB) or owned by easyLB's L2 speaker with ARP,
+(keepalived/VRRP, a hardware LB) or owned by L2Keeper's L2 speaker with ARP,
 IPv6 NDP, and per-VIP Leases.
 
 - Chart type: application
 - Requires: Kubernetes `>=1.24`, Helm 3
 - CRDs: `VIPPool`, `VIPBinding` (installed on the first install)
-- Source: <https://github.com/bzdvdn/easylb>
-- Docs: <https://bzdvdn.github.io/easylb/>
-- MetalLB migration: <https://bzdvdn.github.io/easylb/en/migration-metallb/>
-- Examples: <https://github.com/bzdvdn/easylb/tree/master/examples>
-- Contributing: <https://github.com/bzdvdn/easylb/blob/master/CONTRIBUTING.md>
-- License: Apache-2.0 (<https://github.com/bzdvdn/easylb/blob/master/LICENSE>)
+- Source: <https://github.com/l2keeper/l2keeper>
+- Docs: <https://l2keeper.github.io/l2keeper/>
+- MetalLB migration: <https://l2keeper.github.io/l2keeper/en/migration-metallb/>
+- Examples: <https://github.com/l2keeper/l2keeper/tree/master/examples>
+- Contributing: <https://github.com/l2keeper/l2keeper/blob/master/CONTRIBUTING.md>
+- License: Apache-2.0 (<https://github.com/l2keeper/l2keeper/blob/master/LICENSE>)
 
 ## Requirements
 
-- Default images are `ghcr.io/bzdvdn/easylb:<appVersion>`. The release workflow
+- Default images are `ghcr.io/l2keeper/l2keeper:<appVersion>`. The release workflow
   publishes images to `ghcr.io/<owner>/<repo>`, so forks and private registries
   must override `controller.image.repository`/`tag` and
   `speaker.image.repository`/`tag`.
@@ -47,9 +47,9 @@ IPv6 NDP, and per-VIP Leases.
 From the published OCI chart:
 
 ```bash
-helm upgrade --install easylb oci://ghcr.io/bzdvdn/charts/easylb \
+helm upgrade --install l2keeper oci://ghcr.io/l2keeper/charts/l2keeper \
   --version <chart-version> \
-  --namespace easylb-system \
+  --namespace l2keeper-system \
   --create-namespace \
   -f my-values.yaml
 ```
@@ -57,8 +57,8 @@ helm upgrade --install easylb oci://ghcr.io/bzdvdn/charts/easylb \
 From a local checkout:
 
 ```bash
-helm upgrade --install easylb charts/easylb \
-  --namespace easylb-system \
+helm upgrade --install l2keeper charts/l2keeper \
+  --namespace l2keeper-system \
   --create-namespace \
   -f my-values.yaml
 ```
@@ -66,10 +66,10 @@ helm upgrade --install easylb charts/easylb \
 Verify:
 
 ```bash
-kubectl -n easylb-system get deploy,ds,pods
+kubectl -n l2keeper-system get deploy,ds,pods
 kubectl get vippool
 kubectl get vipbinding -A
-kubectl -n easylb-system get lease
+kubectl -n l2keeper-system get lease
 ```
 
 ## Values
@@ -80,7 +80,7 @@ kubectl -n easylb-system get lease
 |---|---|---|
 | `controller.enabled` | `true` | deploy the controller |
 | `controller.replicas` | `2` | controller replicas; keep `leaderElect: true` when >1 |
-| `controller.image.repository` | `ghcr.io/bzdvdn/easylb` | controller image |
+| `controller.image.repository` | `ghcr.io/l2keeper/l2keeper` | controller image |
 | `controller.image.tag` | chart `appVersion` | controller image tag |
 | `controller.image.pullPolicy` | `IfNotPresent` | image pull policy |
 | `controller.imagePullSecrets` | `[]` | image pull secrets |
@@ -88,7 +88,7 @@ kubectl -n easylb-system get lease
 | `controller.leaseDuration` | `15s` | leader election Lease duration |
 | `controller.renewDeadline` | `10s` | leader election renew deadline |
 | `controller.retryPeriod` | `2s` | leader election retry period |
-| `controller.loadBalancerClass` | `easylb.io/easylb` | class handled by easyLB |
+| `controller.loadBalancerClass` | `l2keeper.github.io/lb` | class handled by L2Keeper |
 | `controller.requireClass` | `false` | only handle Services with `loadBalancerClass` |
 | `controller.publishNodeIPs` | `true` | publish node IPs together with VIPs |
 | `controller.autoAssignServices` | `true` | create `VIPBinding` automatically for matching Services |
@@ -110,13 +110,13 @@ kubectl -n easylb-system get lease
 | Value | Default | Description |
 |---|---|---|
 | `speaker.enabled` | `true` | deploy the speaker DaemonSet |
-| `speaker.image.repository` | `ghcr.io/bzdvdn/easylb` | speaker image |
+| `speaker.image.repository` | `ghcr.io/l2keeper/l2keeper` | speaker image |
 | `speaker.image.tag` | chart `appVersion` | speaker image tag |
 | `speaker.image.pullPolicy` | `IfNotPresent` | image pull policy |
 | `speaker.imagePullSecrets` | `[]` | image pull secrets |
 | `speaker.interface` | `""` | ARP interface; auto-detected from `nodeIPType` |
 | `speaker.nodeIPType` | `InternalIP` | node address used to select the interface |
-| `speaker.loadBalancerClass` | `easylb.io/easylb` | class handled by easyLB |
+| `speaker.loadBalancerClass` | `l2keeper.github.io/lb` | class handled by L2Keeper |
 | `speaker.requireClass` | `false` | only handle Services with `loadBalancerClass` |
 | `speaker.leaseDuration` | `15s` | per-VIP Lease duration |
 | `speaker.renewDeadline` | `10s` | per-VIP renew deadline |
@@ -159,7 +159,7 @@ without them.
 missing, the controller cannot sync the Gateway watch and does not start.
 When the data-plane Service has no `loadBalancerClass`, keep
 `controller.requireClass: false` (the chart default) or set the class on that
-Service. With `requireClass: false`, easyLB manages every classless
+Service. With `requireClass: false`, L2Keeper manages every classless
 `LoadBalancer` Service in the cluster.
 
 ### Pools and bindings
@@ -181,7 +181,7 @@ bindings:
     mode: external
     vips:
       - 192.168.56.250
-  ingress-easylb:
+  ingress-l2keeper:
     namespace: ingress-nginx
     serviceRef: my-release-ingress-nginx-controller
     mode: l2
@@ -210,23 +210,23 @@ MetalLB compatibility for auto-allocated Services:
   a pool by name;
 - `metallb.io/allow-shared-ip` (legacy `metallb.universe.tf/allow-shared-ip`)
   shares a VIP between Services with the same key and non-overlapping ports;
-- `easylb.io/auto-assign: "false"` on the Service disables auto-allocation.
+- `l2keeper.github.io/auto-assign: "false"` on the Service disables auto-allocation.
 
 ## Examples
 
-Ingress-nginx with a keepalived VIP and an easyLB L2 VIP:
+Ingress-nginx with a keepalived VIP and an L2Keeper L2 VIP:
 
 ```yaml
 controller:
   image:
-    repository: ghcr.io/bzdvdn/easylb
+    repository: ghcr.io/l2keeper/l2keeper
     tag: <tag>
   publishNodeIPs: false
 
 speaker:
   enabled: true
   image:
-    repository: ghcr.io/bzdvdn/easylb
+    repository: ghcr.io/l2keeper/l2keeper
     tag: <tag>
 
 pools:
@@ -242,7 +242,7 @@ bindings:
     mode: external
     vips:
       - 192.168.56.250
-  ingress-easylb:
+  ingress-l2keeper:
     namespace: ingress-nginx
     serviceRef: my-release-ingress-nginx-controller
     mode: l2
@@ -273,9 +273,9 @@ Then annotate the `Gateway`:
 
 ```bash
 kubectl -n <gateway-namespace> annotate gateway <gateway-name> \
-  easylb.io/service=<data-plane-service> \
-  easylb.io/vip-mode=l2 \
-  easylb.io/vip-pool=gateway-vips
+  l2keeper.github.io/service=<data-plane-service> \
+  l2keeper.github.io/vip-mode=l2 \
+  l2keeper.github.io/vip-pool=gateway-vips
 ```
 
 A complete runnable example is in
@@ -295,10 +295,10 @@ A complete runnable example is in
 ## Uninstall and cleanup
 
 ```bash
-helm uninstall easylb -n easylb-system
+helm uninstall l2keeper -n l2keeper-system
 ```
 
-easyLB does not install iptables/ipvs rules; kube-proxy creates them from
+L2Keeper does not install iptables/ipvs rules; kube-proxy creates them from
 `Service.status.loadBalancer.ingress`. Uninstall removes the controller,
 speaker, RBAC, PDB, and the chart-rendered `VIPPool`/`VIPBinding` objects. It
 does **not** clear published Service status, remove CRDs, remove manually
@@ -318,11 +318,11 @@ kubectl -n <namespace> patch svc <service> --type merge \
   -p '{"status":{"loadBalancer":{"ingress":[]}}}' --subresource=status
 
 # Remove stale runtime Leases if the namespace is kept.
-kubectl -n easylb-system get lease
-kubectl -n easylb-system delete lease <name>
+kubectl -n l2keeper-system get lease
+kubectl -n l2keeper-system delete lease <name>
 
 # Optional and destructive: removes all VIPPool/VIPBinding objects.
-kubectl delete crd vippools.easylb.io vipbindings.easylb.io
+kubectl delete crd vippools.l2keeper.github.io vipbindings.l2keeper.github.io
 ```
 
 With `mode: l2`, the speaker stops answering ARP when its pods terminate. With
@@ -334,7 +334,7 @@ for the full behavior.
 ## Development
 
 ```bash
-helm lint charts/easylb
-helm template easylb charts/easylb --namespace easylb-system \
-  -f charts/easylb/values-example.yaml --include-crds
+helm lint charts/l2keeper
+helm template l2keeper charts/l2keeper --namespace l2keeper-system \
+  -f charts/l2keeper/values-example.yaml --include-crds
 ```

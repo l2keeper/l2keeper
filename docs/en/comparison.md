@@ -2,10 +2,10 @@
 
 **English** | [Русский](../ru/comparison.md)
 
-| | klipper / ServiceLB | easyLB | MetalLB | kube-vip | HAProxy + PROXY |
+| | klipper / ServiceLB | L2Keeper | MetalLB | kube-vip | HAProxy + PROXY |
 |---|---|---|---|---|---|
 | Dataplane | hostPort + iptables in svclb pod | kube-proxy | kube-proxy | kube-proxy | own L4 proxy |
-| VIP ownership | none (node IPs) | keepalived (`external`) or easyLB speaker (`l2`) | ARP/NDP or BGP | ARP/NDP, BGP, VRRP | itself |
+| VIP ownership | none (node IPs) | keepalived (`external`) or L2Keeper speaker (`l2`) | ARP/NDP or BGP | ARP/NDP, BGP, VRRP | itself |
 | IPAM | no | `VIPPool` | `IPAddressPool` | pool/static | no |
 | L2 | no | yes (`l2`) | yes | yes | no |
 | BGP | no | reserved | yes | yes | no |
@@ -14,11 +14,11 @@
 | Privileges | NET_ADMIN + hostPort | controller none; speaker root + NET_RAW | speaker hostNetwork/NET_RAW | hostNetwork/network privileges | hostNetwork |
 | Best for | simple node-IP LB | ServiceLB/MetalLB L2 replacement on small bare-metal | full bare-metal LB | VIP/BGP/control-plane VIP | L4 proxy with client IP |
 
-easyLB is intended as a complete replacement for klipper/ServiceLB and for
+L2Keeper is intended as a complete replacement for klipper/ServiceLB and for
 MetalLB's L2 mode on small bare-metal clusters that do not need BGP or
 advanced MetalLB features.
 
-## When easyLB is a good fit
+## When L2Keeper is a good fit
 
 - k3s/RKE2 on bare metal or a private LAN where ServiceLB or MetalLB L2 is
   used today.
@@ -43,10 +43,10 @@ advanced MetalLB features.
 ## Coexistence rules
 
 - One VIP has exactly one owner.
-- Do not run keepalived, easyLB `mode: l2`, MetalLB, and kube-vip for the same
+- Do not run keepalived, L2Keeper `mode: l2`, MetalLB, and kube-vip for the same
   VIP.
 - `mode: external` + keepalived is a supported combination: keepalived owns the
-  VIP, easyLB publishes it.
+  VIP, L2Keeper publishes it.
 - Different VIPs can be owned by different systems, but keep the ownership
   explicit and documented.
-- Disable the k3s/RKE2 built-in ServiceLB when using easyLB.
+- Disable the k3s/RKE2 built-in ServiceLB when using L2Keeper.

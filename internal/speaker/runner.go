@@ -16,7 +16,7 @@ import (
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 
-	"github.com/bzdvdn/easylb/internal/metrics"
+	"github.com/l2keeper/l2keeper/internal/metrics"
 )
 
 type runner struct {
@@ -91,7 +91,7 @@ func startRunner(
 			RenewDeadline:   renewDeadline,
 			RetryPeriod:     retryPeriod,
 			ReleaseOnCancel: true,
-			Name:            "easylb-speaker",
+			Name:            "l2keeper-speaker",
 			Callbacks: leaderelection.LeaderCallbacks{
 				OnStartedLeading: func(ctx context.Context) {
 					binding := key.Namespace + "/" + key.Name
@@ -192,7 +192,7 @@ func hasIPv6(addresses []netip.Addr) bool {
 
 func leaseName(key types.NamespacedName) string {
 	sum := sha256.Sum256([]byte(key.Namespace + "/" + key.Name))
-	return "easylb-vip-" + hex.EncodeToString(sum[:6])
+	return "l2keeper-vip-" + hex.EncodeToString(sum[:6])
 }
 
 func addressesToStrings(addresses []netip.Addr) []string {

@@ -1,4 +1,4 @@
-// Package v1alpha1 contains the easyLB API types.
+// Package v1alpha1 contains the L2Keeper API types.
 package v1alpha1
 
 import (
@@ -7,13 +7,13 @@ import (
 )
 
 var (
-	// GroupVersion is the group and version for easyLB resources.
-	GroupVersion = schema.GroupVersion{Group: "easylb.io", Version: "v1alpha1"}
+	// GroupVersion is the group and version for L2Keeper resources.
+	GroupVersion = schema.GroupVersion{Group: "l2keeper.github.io", Version: "v1alpha1"}
 
-	// SchemeBuilder registers the easyLB API types with a scheme.
+	// SchemeBuilder registers the L2Keeper API types with a scheme.
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
 
-	// AddToScheme adds the easyLB API types to a scheme.
+	// AddToScheme adds the L2Keeper API types to a scheme.
 	AddToScheme = SchemeBuilder.AddToScheme
 )
 

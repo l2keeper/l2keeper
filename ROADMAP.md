@@ -1,6 +1,6 @@
-# easyLB roadmap
+# L2Keeper roadmap
 
-easyLB targets small bare-metal / on-prem clusters that need a simple
+L2Keeper targets small bare-metal / on-prem clusters that need a simple
 `LoadBalancer` implementation without BGP. The goal is to replace the k3s/RKE2
 ServiceLB and MetalLB's **L2 mode**, not to reimplement MetalLB's BGP and
 advanced traffic-engineering features.
@@ -23,7 +23,7 @@ Status: `[x]` done, `[ ]` not done yet.
 - [x] Controller HA: 2 replicas, leader election, PDB, topology spread, and
   optimistic status updates.
 - [x] Service selection via `loadBalancerClass` and `requireClass`, plus
-  `easylb.io/enabled: "false"` opt-out.
+  `l2keeper.github.io/enabled: "false"` opt-out.
 
 ### IPAM and automatic allocation
 
@@ -52,7 +52,7 @@ Status: `[x]` done, `[ ]` not done yet.
 - [x] `allow-shared-ip` via `VIPBinding.spec.sharingKey`: same key plus
   non-overlapping Service ports.
 - [x] Deterministic conflict winner when two bindings claim the same VIP.
-- [x] `easylb.io/auto-assign: "false"` opt-out for a Service.
+- [x] `l2keeper.github.io/auto-assign: "false"` opt-out for a Service.
 
 ### L2 speaker
 
@@ -69,8 +69,8 @@ Status: `[x]` done, `[ ]` not done yet.
 
 - [x] Optional Gateway API `v1` integration (`gatewayAPI.enabled`).
 - [x] `Gateway` -> `VIPBinding` translation with ownerReference and cleanup.
-- [x] Address sources: `Gateway.spec.addresses`, `easylb.io/vips`, and
-  `easylb.io/vip-pool`.
+- [x] Address sources: `Gateway.spec.addresses`, `l2keeper.github.io/vips`, and
+  `l2keeper.github.io/vip-pool`.
 - [x] Synthetic compatibility tests for Gateway API v1.0/v1.2/v1.4/v1.5/v1.7
   object shapes and unknown future fields.
 - [x] Version/compatibility documentation, including the Kubernetes 1.31+
@@ -79,11 +79,11 @@ Status: `[x]` done, `[ ]` not done yet.
 ### Observability
 
 - [x] Prometheus metrics:
-  - `easylb_controller_vip_allocations_total`
-  - `easylb_controller_auto_bindings_total`
-  - `easylb_speaker_advertised_vips`
-  - `easylb_speaker_leader_changes_total`
-  - `easylb_speaker_errors_total`
+  - `l2keeper_controller_vip_allocations_total`
+  - `l2keeper_controller_auto_bindings_total`
+  - `l2keeper_speaker_advertised_vips`
+  - `l2keeper_speaker_leader_changes_total`
+  - `l2keeper_speaker_errors_total`
 - [x] Controller and speaker metrics Services.
 - [x] Optional Prometheus Operator `ServiceMonitor` in the chart.
 - [x] Kubernetes events for allocation, conflicts, auto-binding lifecycle, and
@@ -92,8 +92,8 @@ Status: `[x]` done, `[ ]` not done yet.
 ### Helm and delivery
 
 - [x] Helm chart with CRDs, controller, speaker, RBAC, PDB, and metrics.
-- [x] Chart values documentation in `charts/easylb/README.md`.
-- [x] OCI chart publishing workflow (`ghcr.io/<owner>/charts/easylb`).
+- [x] Chart values documentation in `charts/l2keeper/README.md`.
+- [x] OCI chart publishing workflow (`ghcr.io/<owner>/charts/l2keeper`).
 - [x] Multi-arch image release workflow (`linux/amd64`, `linux/arm64`).
 - [x] CI for gofmt, `go vet`, tests with `-race`, golangci-lint (revive,
   staticcheck, gosec, ...), standalone gosec, Helm lint/template, and image

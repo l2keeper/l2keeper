@@ -1,4 +1,4 @@
-IMAGE ?= ghcr.io/bzdvdn/easylb:dev
+IMAGE ?= ghcr.io/l2keeper/l2keeper:dev
 GOLANGCI_LINT_VERSION ?= v2.15.0
 GOSEC_VERSION ?= v2.30.0
 
@@ -28,11 +28,11 @@ docker-build:
 	docker build -t $(IMAGE) .
 
 helm-lint:
-	helm lint charts/easylb
+	helm lint charts/l2keeper
 
 helm-template:
-	helm template easylb charts/easylb --namespace easylb-system \
-		-f charts/easylb/values-example.yaml --include-crds
+	helm template l2keeper charts/l2keeper --namespace l2keeper-system \
+		-f charts/l2keeper/values-example.yaml --include-crds
 
 e2e:
 	./test/e2e/run.sh

@@ -11,7 +11,7 @@ Description:
 
 Website:
 
-> https://bzdvdn.github.io/easylb/
+> https://l2keeper.github.io/l2keeper/
 
 Suggested topics:
 
@@ -26,10 +26,10 @@ Suggested topics:
 - [ ] Enable **Dependabot alerts** and security updates.
 - [ ] Enable **CodeQL** (workflow included in `.github/workflows/codeql.yaml`).
 - [ ] Enable **GitHub Pages** with source **GitHub Actions**.
-- [ ] Make GHCR packages public (`easylb` and `charts/easylb`).
+- [ ] Make GHCR packages public (`l2keeper` and `charts/l2keeper`).
 - [ ] Protect the default branch (`master` today): require CI, no force pushes,
   linear history.
-- [ ] Create the first release `v0.1.0` with the chart `.tgz` attached.
+- [ ] Create the first release `v0.2.0` with the chart `.tgz` attached.
 - [ ] Pin the repository in the GitHub profile and add the docs link.
 
 ## Community files

@@ -1,4 +1,4 @@
-easyLB has been installed in namespace {{ .Release.Namespace }}.
+L2Keeper has been installed in namespace {{ .Release.Namespace }}.
 
 Check the controller and speaker:
 
@@ -15,8 +15,8 @@ annotations:
     -f values-example.yaml
 
 Remember:
-  * external VIPs are owned by keepalived and are only published by easyLB;
-  * l2 VIPs are advertised by the easyLB speaker;
+  * external VIPs are owned by keepalived and are only published by L2Keeper;
+  * l2 VIPs are advertised by the L2Keeper speaker;
   * an l2 VIP is not assigned to the interface, so ping does not work for it;
     use TCP checks instead.
 

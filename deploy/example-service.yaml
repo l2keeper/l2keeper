@@ -1,11 +1,11 @@
-# Example: expose an existing ingress-nginx Service through easyLB.
+# Example: expose an existing ingress-nginx Service through L2Keeper.
 #
 # This Service was created without spec.loadBalancerClass. The field is
 # immutable, so the controller is expected to run with --require-class=false
-# (the default in deploy/easylb.yaml) and adopt it by annotation.
+# (the default in deploy/l2keeper.yaml) and adopt it by annotation.
 #
 # For a NEW Service, prefer setting:
-#   spec.loadBalancerClass: easylb.io/easylb
+#   spec.loadBalancerClass: l2keeper.github.io/lb
 # and run the controller with --require-class=true.
 ---
 apiVersion: v1

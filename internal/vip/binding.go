@@ -6,7 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	easylv1alpha1 "github.com/bzdvdn/easylb/api/v1alpha1"
+	l2keeperv1alpha1 "github.com/l2keeper/l2keeper/api/v1alpha1"
 )
 
 // BindingSource resolves VIPs from VIPBinding objects in the Service namespace.
@@ -20,7 +20,7 @@ func (s BindingSource) VIPs(ctx context.Context, svc *corev1.Service) ([]Spec, e
 		return nil, nil
 	}
 
-	var list easylv1alpha1.VIPBindingList
+	var list l2keeperv1alpha1.VIPBindingList
 	if err := s.Client.List(ctx, &list, client.InNamespace(svc.Namespace)); err != nil {
 		return nil, err
 	}

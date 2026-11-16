@@ -1,4 +1,4 @@
-# NGINX Gateway Fabric with an easyLB L2 VIP
+# NGINX Gateway Fabric with an L2Keeper L2 VIP
 
 This example uses the native Gateway API integration with NGINX Gateway
 Fabric. The NGINX data-plane Service is named `<gateway>-nginx`.
@@ -26,20 +26,20 @@ kubectl create namespace gateway-system --dry-run=client -o yaml | kubectl apply
 kubectl apply -f backend.yaml
 kubectl apply -f gateway.yaml
 
-helm upgrade --install easylb oci://ghcr.io/bzdvdn/charts/easylb \
+helm upgrade --install l2keeper oci://ghcr.io/l2keeper/charts/l2keeper \
   --version <chart-version> \
-  --namespace easylb-system \
+  --namespace l2keeper-system \
   --create-namespace \
   -f values.yaml
 
 kubectl -n gateway-system wait --for=condition=Programmed gateway/public --timeout=5m
 kubectl -n gateway-system annotate gateway public \
-  easylb.io/service=public-nginx \
-  easylb.io/vip-mode=l2 \
-  easylb.io/vip-pool=gateway-vips
+  l2keeper.github.io/service=public-nginx \
+  l2keeper.github.io/vip-mode=l2 \
+  l2keeper.github.io/vip-pool=gateway-vips
 ```
 
-If the Gateway name or namespace differs, update the `easylb.io/service`
+If the Gateway name or namespace differs, update the `l2keeper.github.io/service`
 annotation to `<gateway-name>-nginx`.
 
 ## Verify

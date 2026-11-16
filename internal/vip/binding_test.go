@@ -12,7 +12,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	easylv1alpha1 "github.com/bzdvdn/easylb/api/v1alpha1"
+	l2keeperv1alpha1 "github.com/l2keeper/l2keeper/api/v1alpha1"
 )
 
 func TestBindingSource(t *testing.T) {
@@ -20,42 +20,42 @@ func TestBindingSource(t *testing.T) {
 	if err := clientgoscheme.AddToScheme(scheme); err != nil {
 		t.Fatal(err)
 	}
-	if err := easylv1alpha1.AddToScheme(scheme); err != nil {
+	if err := l2keeperv1alpha1.AddToScheme(scheme); err != nil {
 		t.Fatal(err)
 	}
 
 	svc := &corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: "ingress", Namespace: "default"}}
-	explicit := &easylv1alpha1.VIPBinding{
+	explicit := &l2keeperv1alpha1.VIPBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: "explicit", Namespace: "default"},
-		Spec: easylv1alpha1.VIPBindingSpec{
-			ServiceRef: easylv1alpha1.ServiceReference{Name: "ingress"},
-			Mode:       easylv1alpha1.VIPModeExternal,
+		Spec: l2keeperv1alpha1.VIPBindingSpec{
+			ServiceRef: l2keeperv1alpha1.ServiceReference{Name: "ingress"},
+			Mode:       l2keeperv1alpha1.VIPModeExternal,
 			VIPs:       []string{"10.99.50.100"},
 		},
-		Status: easylv1alpha1.VIPBindingStatus{AllocatedIPs: []string{"10.99.50.100"}},
+		Status: l2keeperv1alpha1.VIPBindingStatus{AllocatedIPs: []string{"10.99.50.100"}},
 	}
-	invalid := &easylv1alpha1.VIPBinding{
+	invalid := &l2keeperv1alpha1.VIPBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: "invalid", Namespace: "default"},
-		Spec: easylv1alpha1.VIPBindingSpec{
-			ServiceRef: easylv1alpha1.ServiceReference{Name: "ingress"},
-			Mode:       easylv1alpha1.VIPModeL2,
+		Spec: l2keeperv1alpha1.VIPBindingSpec{
+			ServiceRef: l2keeperv1alpha1.ServiceReference{Name: "ingress"},
+			Mode:       l2keeperv1alpha1.VIPModeL2,
 			VIPs:       []string{"10.99.50.101"},
-			PoolRef:    &easylv1alpha1.PoolReference{Name: "pool"},
+			PoolRef:    &l2keeperv1alpha1.PoolReference{Name: "pool"},
 		},
 	}
-	pooled := &easylv1alpha1.VIPBinding{
+	pooled := &l2keeperv1alpha1.VIPBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: "pooled", Namespace: "default"},
-		Spec: easylv1alpha1.VIPBindingSpec{
-			ServiceRef: easylv1alpha1.ServiceReference{Name: "ingress"},
-			Mode:       easylv1alpha1.VIPModeL2,
-			PoolRef:    &easylv1alpha1.PoolReference{Name: "pool"},
+		Spec: l2keeperv1alpha1.VIPBindingSpec{
+			ServiceRef: l2keeperv1alpha1.ServiceReference{Name: "ingress"},
+			Mode:       l2keeperv1alpha1.VIPModeL2,
+			PoolRef:    &l2keeperv1alpha1.PoolReference{Name: "pool"},
 		},
-		Status: easylv1alpha1.VIPBindingStatus{AllocatedIPs: []string{"192.168.56.240"}},
+		Status: l2keeperv1alpha1.VIPBindingStatus{AllocatedIPs: []string{"192.168.56.240"}},
 	}
-	unrelated := &easylv1alpha1.VIPBinding{
+	unrelated := &l2keeperv1alpha1.VIPBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: "unrelated", Namespace: "default"},
-		Spec: easylv1alpha1.VIPBindingSpec{
-			ServiceRef: easylv1alpha1.ServiceReference{Name: "other"},
+		Spec: l2keeperv1alpha1.VIPBindingSpec{
+			ServiceRef: l2keeperv1alpha1.ServiceReference{Name: "other"},
 			VIPs:       []string{"10.99.50.200"},
 		},
 	}

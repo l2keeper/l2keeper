@@ -2,15 +2,15 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ include "easylb.fullname" . }}-speaker
+  name: {{ include "l2keeper.fullname" . }}-speaker
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "easylb.labels" . | nindent 4 }}
+    {{- include "l2keeper.labels" . | nindent 4 }}
     app.kubernetes.io/component: speaker
 spec:
   selector:
     matchLabels:
-      {{- include "easylb.speakerSelectorLabels" . | nindent 6 }}
+      {{- include "l2keeper.speakerSelectorLabels" . | nindent 6 }}
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
@@ -18,14 +18,14 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "easylb.labels" . | nindent 8 }}
+        {{- include "l2keeper.labels" . | nindent 8 }}
         app.kubernetes.io/component: speaker
       {{- with .Values.speaker.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
-      serviceAccountName: {{ include "easylb.fullname" . }}-speaker
+      serviceAccountName: {{ include "l2keeper.fullname" . }}-speaker
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       priorityClassName: {{ .Values.speaker.priorityClassName }}
@@ -46,7 +46,7 @@ spec:
       {{- end }}
       containers:
         - name: speaker
-          image: {{ include "easylb.speakerImage" . }}
+          image: {{ include "l2keeper.speakerImage" . }}
           imagePullPolicy: {{ .Values.speaker.image.pullPolicy }}
           command: ["/speaker"]
           args:

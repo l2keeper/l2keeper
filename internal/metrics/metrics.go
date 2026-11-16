@@ -1,4 +1,4 @@
-// Package metrics defines the Prometheus metrics exposed by easyLB.
+// Package metrics defines the Prometheus metrics exposed by L2Keeper.
 package metrics
 
 import (
@@ -9,7 +9,7 @@ import (
 var (
 	// VIPAllocations counts VIPBinding allocation results.
 	VIPAllocations = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "easylb",
+		Namespace: "l2keeper",
 		Subsystem: "controller",
 		Name:      "vip_allocations_total",
 		Help:      "Number of VIPBinding allocation attempts by result and reason.",
@@ -17,7 +17,7 @@ var (
 
 	// AutoBindings counts automatic VIPBinding lifecycle actions.
 	AutoBindings = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "easylb",
+		Namespace: "l2keeper",
 		Subsystem: "controller",
 		Name:      "auto_bindings_total",
 		Help:      "Number of automatic VIPBinding lifecycle actions.",
@@ -25,7 +25,7 @@ var (
 
 	// SpeakerAdvertisedVIPs reports the number of VIPs advertised per binding.
 	SpeakerAdvertisedVIPs = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "easylb",
+		Namespace: "l2keeper",
 		Subsystem: "speaker",
 		Name:      "advertised_vips",
 		Help:      "Number of VIPs currently advertised by the speaker per binding.",
@@ -33,7 +33,7 @@ var (
 
 	// SpeakerLeaderChanges counts speaker leadership acquisitions.
 	SpeakerLeaderChanges = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "easylb",
+		Namespace: "l2keeper",
 		Subsystem: "speaker",
 		Name:      "leader_changes_total",
 		Help:      "Number of times the speaker acquired leadership for a VIPBinding.",
@@ -41,7 +41,7 @@ var (
 
 	// SpeakerErrors counts ARP/NDP responder errors.
 	SpeakerErrors = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "easylb",
+		Namespace: "l2keeper",
 		Subsystem: "speaker",
 		Name:      "errors_total",
 		Help:      "Number of ARP/NDP responder errors by interface, protocol, and operation.",

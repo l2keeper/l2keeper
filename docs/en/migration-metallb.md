@@ -1,12 +1,12 @@
 # Migrating from MetalLB
 
-easyLB covers MetalLB's **L2 mode** and the common IPAM/annotation surface used
+L2Keeper covers MetalLB's **L2 mode** and the common IPAM/annotation surface used
 by small bare-metal clusters. It does not implement BGP, BFD, ECMP, or MetalLB's
 advanced traffic engineering; keep MetalLB if you need those features.
 
 ## Compatibility matrix
 
-| MetalLB | easyLB | Notes |
+| MetalLB | L2Keeper | Notes |
 |---|---|---|
 | `IPAddressPool` | `VIPPool` | `addresses`, `autoAssign`, `avoidBuggyIPs` |
 | `IPAddressPool.spec.serviceAllocation` | `VIPPool.spec.serviceAllocation` | namespace/service label selectors |
@@ -15,13 +15,13 @@ advanced traffic engineering; keep MetalLB if you need those features.
 | `metallb.io/loadBalancerIPs` | supported | also legacy prefix and `spec.loadBalancerIP` |
 | `metallb.io/allow-shared-ip` | supported | `VIPBinding.spec.sharingKey`, non-overlapping ports |
 | `metallb.io/ip-allocated-from-pool` | not written | use `VIPBinding.status.allocatedIPs` |
-| BGP/BFD/ECMP | not supported | out of scope for easyLB |
+| BGP/BFD/ECMP | not supported | out of scope for L2Keeper |
 | Per-pool node/interface advertisement | not implemented yet | speaker uses global `speaker.interface`/`nodeIPType` |
 
 ## Migration steps
 
 1. **Choose an ownership window.** One VIP must have exactly one owner. Do not
-   run MetalLB and easyLB speakers for the same address at the same time.
+   run MetalLB and L2Keeper speakers for the same address at the same time.
 2. **Disable k3s/RKE2 ServiceLB** if you are also replacing klipper:
 
    ```yaml
@@ -34,14 +34,14 @@ advanced traffic engineering; keep MetalLB if you need those features.
    sudo systemctl restart k3s
    ```
 
-3. **Install the Gateway API-independent part of easyLB** (CRDs and chart):
+3. **Install the Gateway API-independent part of L2Keeper** (CRDs and chart):
 
    ```bash
-   helm upgrade --install easylb oci://ghcr.io/bzdvdn/charts/easylb \
+   helm upgrade --install l2keeper oci://ghcr.io/l2keeper/charts/l2keeper \
      --version <chart-version> \
-     --namespace easylb-system \
+     --namespace l2keeper-system \
      --create-namespace \
-     -f values-easylb.yaml
+     -f values-l2keeper.yaml
    ```
 
 4. **Convert each `IPAddressPool` to `VIPPool`:**
@@ -59,8 +59,8 @@ advanced traffic engineering; keep MetalLB if you need those features.
      autoAssign: true
      avoidBuggyIPs: true
    ---
-   # easyLB
-   apiVersion: easylb.io/v1alpha1
+   # L2Keeper
+   apiVersion: l2keeper.github.io/v1alpha1
    kind: VIPPool
    metadata:
      name: default
@@ -76,13 +76,13 @@ advanced traffic engineering; keep MetalLB if you need those features.
            kubernetes.io/metadata.name: production
    ```
 
-5. **Convert `L2Advertisement` intent.** easyLB advertises `mode: l2` pools
+5. **Convert `L2Advertisement` intent.** L2Keeper advertises `mode: l2` pools
    from speaker nodes that are eligible for the Service. There is no separate
    `L2Advertisement` object yet; per-pool node/interface selection is not
    implemented, so all speaker nodes use the global `speaker.interface` and
    `speaker.nodeIPType` settings.
 
-6. **Stop MetalLB before easyLB takes over the addresses:**
+6. **Stop MetalLB before L2Keeper takes over the addresses:**
 
    ```bash
    helm uninstall metallb -n metallb-system
@@ -97,8 +97,8 @@ advanced traffic engineering; keep MetalLB if you need those features.
    kubectl get vippool
    kubectl get vipbinding -A -o wide
    kubectl get svc -A --field-selector spec.type=LoadBalancer
-   kubectl -n easylb-system get lease
-   kubectl -n easylb-system logs ds/easylb-speaker --tail=100
+   kubectl -n l2keeper-system get lease
+   kubectl -n l2keeper-system logs ds/l2keeper-speaker --tail=100
    ```
 
    A Service without a manual binding should get an `auto-<service>` binding
@@ -117,7 +117,7 @@ advanced traffic engineering; keep MetalLB if you need those features.
 
 ## Rollback
 
-1. Uninstall easyLB and delete its `VIPPool`/`VIPBinding` objects.
+1. Uninstall L2Keeper and delete its `VIPPool`/`VIPBinding` objects.
 2. Reinstall MetalLB and recreate the `IPAddressPool`/`L2Advertisement`
    resources.
 3. Recreate the Services or let MetalLB reallocate addresses.

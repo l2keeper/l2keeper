@@ -19,4 +19,4 @@ pools:
       # auto-allocated. The Gateway annotation below creates its binding.
       serviceSelector:
         matchLabels:
-          easylb.io/auto-allocate: "true"
+          l2keeper.github.io/auto-allocate: "true"

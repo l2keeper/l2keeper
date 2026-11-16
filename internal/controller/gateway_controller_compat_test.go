@@ -9,12 +9,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	easylv1alpha1 "github.com/bzdvdn/easylb/api/v1alpha1"
+	l2keeperv1alpha1 "github.com/l2keeper/l2keeper/api/v1alpha1"
 )
 
 // These tests do not need a cluster or Gateway API CRDs. They build the same
 // unstructured Gateway objects that different Gateway API releases store and
-// check that easyLB only depends on the stable v1 surface it actually uses.
+// check that L2Keeper only depends on the stable v1 surface it actually uses.
 
 func TestGatewayGVKIsV1(t *testing.T) {
 	if got := gatewayGVK.GroupVersion().String(); got != "gateway.networking.k8s.io/v1" {
@@ -306,7 +306,7 @@ func TestGatewayReconcilerPreservesForeignKeyBinding(t *testing.T) {
 	}, []interface{}{
 		map[string]interface{}{"type": "IPAddress", "value": "10.0.0.100"},
 	})
-	foreign := &easylv1alpha1.VIPBinding{
+	foreign := &l2keeperv1alpha1.VIPBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gateway-gw",
 			Namespace: "gateway-system",
@@ -317,9 +317,9 @@ func TestGatewayReconcilerPreservesForeignKeyBinding(t *testing.T) {
 				UID:        types.UID("other-uid"),
 			}},
 		},
-		Spec: easylv1alpha1.VIPBindingSpec{
-			ServiceRef: easylv1alpha1.ServiceReference{Name: "other-service"},
-			Mode:       easylv1alpha1.VIPModeExternal,
+		Spec: l2keeperv1alpha1.VIPBindingSpec{
+			ServiceRef: l2keeperv1alpha1.ServiceReference{Name: "other-service"},
+			Mode:       l2keeperv1alpha1.VIPModeExternal,
 			VIPs:       []string{"10.0.0.99"},
 		},
 	}
@@ -337,13 +337,13 @@ func TestGatewayReconcilerPreservesForeignKeyBinding(t *testing.T) {
 func TestGatewayModeParsing(t *testing.T) {
 	tests := []struct {
 		value   string
-		want    easylv1alpha1.VIPMode
+		want    l2keeperv1alpha1.VIPMode
 		wantErr bool
 	}{
-		{value: "", want: easylv1alpha1.VIPModeExternal},
-		{value: "external", want: easylv1alpha1.VIPModeExternal},
-		{value: "L2", want: easylv1alpha1.VIPModeL2},
-		{value: "bgp", want: easylv1alpha1.VIPModeBGP},
+		{value: "", want: l2keeperv1alpha1.VIPModeExternal},
+		{value: "external", want: l2keeperv1alpha1.VIPModeExternal},
+		{value: "L2", want: l2keeperv1alpha1.VIPModeL2},
+		{value: "bgp", want: l2keeperv1alpha1.VIPModeBGP},
 		{value: "bogus", wantErr: true},
 	}
 

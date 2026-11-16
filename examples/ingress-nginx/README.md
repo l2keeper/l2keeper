@@ -1,6 +1,6 @@
-# ingress-nginx with an easyLB L2 VIP
+# ingress-nginx with an L2Keeper L2 VIP
 
-The easyLB controller auto-creates `auto-<service>` for the ingress-nginx
+The L2Keeper controller auto-creates `auto-<service>` for the ingress-nginx
 LoadBalancer Service. No VIPPool binding is written by hand.
 
 ## Install ingress-nginx
@@ -13,12 +13,12 @@ helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
   --set controller.service.type=LoadBalancer
 ```
 
-## Install easyLB
+## Install L2Keeper
 
 ```bash
-helm upgrade --install easylb oci://ghcr.io/bzdvdn/charts/easylb \
+helm upgrade --install l2keeper oci://ghcr.io/l2keeper/charts/l2keeper \
   --version <chart-version> \
-  --namespace easylb-system \
+  --namespace l2keeper-system \
   --create-namespace \
   -f values.yaml
 ```

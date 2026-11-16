@@ -26,8 +26,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	easylv1alpha1 "github.com/bzdvdn/easylb/api/v1alpha1"
-	"github.com/bzdvdn/easylb/internal/filter"
+	l2keeperv1alpha1 "github.com/l2keeper/l2keeper/api/v1alpha1"
+	"github.com/l2keeper/l2keeper/internal/filter"
 )
 
 // Reconciler is the per-node speaker. It only advertises VIPs with mode=l2;
@@ -68,7 +68,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 	r.mu.Unlock()
 
-	var binding easylv1alpha1.VIPBinding
+	var binding l2keeperv1alpha1.VIPBinding
 	if err := r.Get(ctx, req.NamespacedName, &binding); err != nil {
 		if client.IgnoreNotFound(err) == nil {
 			r.stop(req.NamespacedName, true)
@@ -77,7 +77,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
-	if binding.Spec.Mode != easylv1alpha1.VIPModeL2 {
+	if binding.Spec.Mode != l2keeperv1alpha1.VIPModeL2 {
 		r.stop(req.NamespacedName, false)
 		return ctrl.Result{RequeueAfter: r.RequeueAfter}, nil
 	}
@@ -251,7 +251,7 @@ func (r *Reconciler) stop(key types.NamespacedName, deleteLease bool) {
 	}
 }
 
-func (r *Reconciler) event(binding *easylv1alpha1.VIPBinding, eventType, reason, message string) {
+func (r *Reconciler) event(binding *l2keeperv1alpha1.VIPBinding, eventType, reason, message string) {
 	if r.Recorder != nil {
 		r.Recorder.Event(binding, eventType, reason, message)
 	}
@@ -260,7 +260,7 @@ func (r *Reconciler) event(binding *easylv1alpha1.VIPBinding, eventType, reason,
 // SetupWithManager registers the speaker with the manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&easylv1alpha1.VIPBinding{}).
+		For(&l2keeperv1alpha1.VIPBinding{}).
 		Watches(&corev1.Node{},
 			handler.EnqueueRequestsFromMapFunc(r.bindingsForNode),
 			builder.WithPredicates(nodeChangedPredicate()),
@@ -275,13 +275,13 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *Reconciler) bindingsForNode(ctx context.Context, _ client.Object) []reconcile.Request {
-	var list easylv1alpha1.VIPBindingList
+	var list l2keeperv1alpha1.VIPBindingList
 	if err := r.List(ctx, &list); err != nil {
 		return nil
 	}
 	requests := make([]reconcile.Request, 0, len(list.Items))
 	for i := range list.Items {
-		if list.Items[i].Spec.Mode == easylv1alpha1.VIPModeL2 {
+		if list.Items[i].Spec.Mode == l2keeperv1alpha1.VIPModeL2 {
 			requests = append(requests, reconcile.Request{
 				NamespacedName: client.ObjectKeyFromObject(&list.Items[i]),
 			})
@@ -311,14 +311,14 @@ func (r *Reconciler) bindingsForEndpointSlice(ctx context.Context, obj client.Ob
 }
 
 func (r *Reconciler) bindingsForServiceRef(ctx context.Context, namespace, name string) []reconcile.Request {
-	var list easylv1alpha1.VIPBindingList
+	var list l2keeperv1alpha1.VIPBindingList
 	if err := r.List(ctx, &list, client.InNamespace(namespace)); err != nil {
 		return nil
 	}
 	requests := make([]reconcile.Request, 0, len(list.Items))
 	for i := range list.Items {
 		binding := &list.Items[i]
-		if binding.Spec.Mode != easylv1alpha1.VIPModeL2 || binding.Spec.ServiceRef.Name != name {
+		if binding.Spec.Mode != l2keeperv1alpha1.VIPModeL2 || binding.Spec.ServiceRef.Name != name {
 			continue
 		}
 		requests = append(requests, reconcile.Request{

@@ -16,12 +16,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	easylv1alpha1 "github.com/bzdvdn/easylb/api/v1alpha1"
-	"github.com/bzdvdn/easylb/internal/address"
-	"github.com/bzdvdn/easylb/internal/vip"
+	l2keeperv1alpha1 "github.com/l2keeper/l2keeper/api/v1alpha1"
+	"github.com/l2keeper/l2keeper/internal/address"
+	"github.com/l2keeper/l2keeper/internal/vip"
 )
 
-const testClass = "easylb.io/easylb"
+const testClass = "l2keeper.github.io/lb"
 
 func TestReconcilePublishesNodeIPsAndVIPs(t *testing.T) {
 	ctx := context.Background()
@@ -30,7 +30,7 @@ func TestReconcilePublishesNodeIPsAndVIPs(t *testing.T) {
 		testNode("node-1", true, "10.0.0.1"),
 		testNode("node-2", true, "10.0.0.2"),
 		svc,
-		testVIPBinding("vip", "ingress", easylv1alpha1.VIPModeExternal, "10.99.50.100"),
+		testVIPBinding("vip", "ingress", l2keeperv1alpha1.VIPModeExternal, "10.99.50.100"),
 		testSlice("ingress", testEndpoint("node-1", true), testEndpoint("node-2", false)),
 	}
 	r, c := newReconciler(t, objects...)
@@ -53,8 +53,8 @@ func TestReconcilePublishesConfiguredVIPModes(t *testing.T) {
 	objects := []client.Object{
 		testNode("node-1", true, "10.0.0.1"),
 		svc,
-		testVIPBinding("external", "ingress", easylv1alpha1.VIPModeExternal, "10.99.50.100"),
-		testVIPBinding("l2", "ingress", easylv1alpha1.VIPModeL2, "10.99.50.101"),
+		testVIPBinding("external", "ingress", l2keeperv1alpha1.VIPModeExternal, "10.99.50.100"),
+		testVIPBinding("l2", "ingress", l2keeperv1alpha1.VIPModeL2, "10.99.50.101"),
 	}
 	r, c := newReconciler(t, objects...)
 
@@ -103,7 +103,7 @@ func TestReconcileIsIdempotent(t *testing.T) {
 	objects := []client.Object{
 		testNode("node-1", true, "10.0.0.1"),
 		svc,
-		testVIPBinding("vip", "ingress", easylv1alpha1.VIPModeExternal, "10.99.50.100"),
+		testVIPBinding("vip", "ingress", l2keeperv1alpha1.VIPModeExternal, "10.99.50.100"),
 		testSlice("ingress", testEndpoint("node-1", true)),
 	}
 	r, c := newReconciler(t, objects...)
@@ -151,8 +151,8 @@ func newReconciler(t *testing.T, objects ...client.Object) (*ServiceReconciler, 
 	if err := clientgoscheme.AddToScheme(scheme); err != nil {
 		t.Fatalf("failed to build scheme: %v", err)
 	}
-	if err := easylv1alpha1.AddToScheme(scheme); err != nil {
-		t.Fatalf("failed to add easyLB scheme: %v", err)
+	if err := l2keeperv1alpha1.AddToScheme(scheme); err != nil {
+		t.Fatalf("failed to add L2Keeper scheme: %v", err)
 	}
 	c := fake.NewClientBuilder().
 		WithScheme(scheme).
@@ -201,15 +201,15 @@ func testService(name string, policy corev1.ServiceExternalTrafficPolicyType) *c
 	}
 }
 
-func testVIPBinding(name, serviceName string, mode easylv1alpha1.VIPMode, vips ...string) *easylv1alpha1.VIPBinding {
-	return &easylv1alpha1.VIPBinding{
+func testVIPBinding(name, serviceName string, mode l2keeperv1alpha1.VIPMode, vips ...string) *l2keeperv1alpha1.VIPBinding {
+	return &l2keeperv1alpha1.VIPBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "default"},
-		Spec: easylv1alpha1.VIPBindingSpec{
-			ServiceRef: easylv1alpha1.ServiceReference{Name: serviceName},
+		Spec: l2keeperv1alpha1.VIPBindingSpec{
+			ServiceRef: l2keeperv1alpha1.ServiceReference{Name: serviceName},
 			Mode:       mode,
 			VIPs:       vips,
 		},
-		Status: easylv1alpha1.VIPBindingStatus{AllocatedIPs: append([]string(nil), vips...)},
+		Status: l2keeperv1alpha1.VIPBindingStatus{AllocatedIPs: append([]string(nil), vips...)},
 	}
 }
 

@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	easylv1alpha1 "github.com/bzdvdn/easylb/api/v1alpha1"
+	l2keeperv1alpha1 "github.com/l2keeper/l2keeper/api/v1alpha1"
 )
 
 func TestGatewayReconcilerCreatesBinding(t *testing.T) {
@@ -30,7 +30,7 @@ func TestGatewayReconcilerCreatesBinding(t *testing.T) {
 	if binding.Spec.ServiceRef.Name != "ingress" {
 		t.Fatalf("unexpected serviceRef: %q", binding.Spec.ServiceRef.Name)
 	}
-	if binding.Spec.Mode != easylv1alpha1.VIPModeL2 {
+	if binding.Spec.Mode != l2keeperv1alpha1.VIPModeL2 {
 		t.Fatalf("unexpected mode: %q", binding.Spec.Mode)
 	}
 	if len(binding.Spec.VIPs) != 1 || binding.Spec.VIPs[0] != "10.0.0.100" {
@@ -54,7 +54,7 @@ func TestGatewayReconcilerUsesPool(t *testing.T) {
 	if binding.Spec.PoolRef == nil || binding.Spec.PoolRef.Name != "public-vips" {
 		t.Fatalf("unexpected poolRef: %#v", binding.Spec.PoolRef)
 	}
-	if binding.Spec.Mode != easylv1alpha1.VIPModeExternal {
+	if binding.Spec.Mode != l2keeperv1alpha1.VIPModeExternal {
 		t.Fatalf("unexpected mode: %q", binding.Spec.Mode)
 	}
 }
@@ -67,7 +67,7 @@ func TestGatewayReconcilerIgnoresMissingService(t *testing.T) {
 
 	reconcileGateway(t, r, "gateway-system", "gw")
 
-	var binding easylv1alpha1.VIPBinding
+	var binding l2keeperv1alpha1.VIPBinding
 	err := c.Get(context.Background(), types.NamespacedName{Namespace: "gateway-system", Name: "gateway-gw"}, &binding)
 	if err == nil {
 		t.Fatalf("expected no VIPBinding, got %#v", binding.Spec)
@@ -104,7 +104,7 @@ func TestGatewayReconcilerUpdatesAndDeletesBinding(t *testing.T) {
 	}
 	reconcileGateway(t, r, "gateway-system", "gw")
 
-	var deleted easylv1alpha1.VIPBinding
+	var deleted l2keeperv1alpha1.VIPBinding
 	err := c.Get(context.Background(), types.NamespacedName{Namespace: "gateway-system", Name: "gateway-gw"}, &deleted)
 	if err == nil {
 		t.Fatal("expected VIPBinding to be deleted")
@@ -118,15 +118,15 @@ func newGatewayReconciler(t *testing.T, objects ...client.Object) (*GatewayRecon
 	if err := clientgoscheme.AddToScheme(scheme); err != nil {
 		t.Fatalf("failed to build scheme: %v", err)
 	}
-	if err := easylv1alpha1.AddToScheme(scheme); err != nil {
-		t.Fatalf("failed to add easyLB scheme: %v", err)
+	if err := l2keeperv1alpha1.AddToScheme(scheme); err != nil {
+		t.Fatalf("failed to add L2Keeper scheme: %v", err)
 	}
 	scheme.AddKnownTypeWithName(gatewayGVK, &unstructured.Unstructured{})
 	scheme.AddKnownTypeWithName(gatewayGVK.GroupVersion().WithKind("GatewayList"), &unstructured.UnstructuredList{})
 
 	c := fake.NewClientBuilder().
 		WithScheme(scheme).
-		WithStatusSubresource(&easylv1alpha1.VIPBinding{}).
+		WithStatusSubresource(&l2keeperv1alpha1.VIPBinding{}).
 		WithObjects(objects...).
 		Build()
 	return &GatewayReconciler{Client: c}, c
@@ -154,9 +154,9 @@ func reconcileGateway(t *testing.T, r *GatewayReconciler, namespace, name string
 	}
 }
 
-func getGatewayBinding(t *testing.T, c client.Client, namespace, name string) *easylv1alpha1.VIPBinding {
+func getGatewayBinding(t *testing.T, c client.Client, namespace, name string) *l2keeperv1alpha1.VIPBinding {
 	t.Helper()
-	var binding easylv1alpha1.VIPBinding
+	var binding l2keeperv1alpha1.VIPBinding
 	if err := c.Get(context.Background(), types.NamespacedName{Namespace: namespace, Name: name}, &binding); err != nil {
 		t.Fatalf("failed to get VIPBinding: %v", err)
 	}

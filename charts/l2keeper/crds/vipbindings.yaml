@@ -1,9 +1,9 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: vipbindings.easylb.io
+  name: vipbindings.l2keeper.github.io
 spec:
-  group: easylb.io
+  group: l2keeper.github.io
   scope: Namespaced
   names:
     kind: VIPBinding

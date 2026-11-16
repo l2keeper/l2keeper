@@ -7,8 +7,8 @@ SERVICE="${E2E_SERVICE:-e2e}"
 
 kubectl get nodes >/dev/null
 
-helm upgrade --install easylb "${ROOT}/charts/easylb" \
-  --namespace easylb-system \
+helm upgrade --install l2keeper "${ROOT}/charts/l2keeper" \
+  --namespace l2keeper-system \
   --create-namespace \
   -f "${ROOT}/test/e2e/values.yaml" \
   --wait --timeout 3m

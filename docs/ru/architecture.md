@@ -2,7 +2,7 @@
 
 [English](../en/architecture.md) | **Русский**
 
-easyLB — control-plane контроллер и опциональный per-node L2-speaker. Пакеты
+L2Keeper — control-plane контроллер и опциональный per-node L2-speaker. Пакеты
 он не проксирует: DNAT и балансировку выполняет kube-proxy, как для любого
 Kubernetes Service.
 
@@ -13,7 +13,7 @@ Kubernetes Service.
                          │
         ┌────────────────┴────────────────┐
         │                                 │
-  easyLB controller                 easyLB speaker
+  L2Keeper controller                 L2Keeper speaker
   (Deployment, 2 реплики)           (DaemonSet, hostNetwork)
         │                                 │
         │ VIPPool / VIPBinding             │ Lease на VIPBinding
@@ -27,8 +27,8 @@ Kubernetes Service.
 
 ### Controller
 
-Deployment в `easylb-system`, 2 реплики, leader election через Lease
-`easylb.io`. Активен только лидер.
+Deployment в `l2keeper-system`, 2 реплики, leader election через Lease
+`l2keeper.github.io`. Активен только лидер.
 
 Смотрит:
 
@@ -92,7 +92,7 @@ VIP **не назначается на интерфейс** и не добавл
 ### Gateway API
 
 Реализации Gateway API поднимают data-plane `Service` типа `LoadBalancer`.
-easyLB управляет этим Service так же, как ingress-nginx. При опциональной
+L2Keeper управляет этим Service так же, как ingress-nginx. При опциональной
 интеграции `--enable-gateway-api` `Gateway` превращается в `VIPBinding`; см.
 [gateway-api.md](gateway-api.md).
 
@@ -105,13 +105,13 @@ kube-proxy на каждой ноде:
 - делает DNAT на endpoint;
 - ведёт conntrack.
 
-easyLB не добавляет ни одного правила в netfilter и не находится в пути
+L2Keeper не добавляет ни одного правила в netfilter и не находится в пути
 пакета. Поэтому:
 
 - рестарт controller/speaker не рвёт established-соединения;
 - долгие TCP/stream-сессии живут по таймаутам conntrack/kube-proxy;
 - при падении ноды-владельца VIP или backend-поды established-сессии
-  рвутся — это свойство L4 VIP, а не easyLB.
+  рвутся — это свойство L4 VIP, а не L2Keeper.
 
 ### Keepalived
 
@@ -121,7 +121,7 @@ easyLB не добавляет ни одного правила в netfilter и 
 - делает VRRP/ARP;
 - двигает VIP между нодами.
 
-easyLB только публикует VIP в статусе сервиса. На ноде-владельце VIP должен
+L2Keeper только публикует VIP в статусе сервиса. На ноде-владельце VIP должен
 быть локальный ingress endpoint; иначе при `Local` трафик будет дропаться.
 Для этого в keepalived полезно добавить `vrrp_script` на
 `healthCheckNodePort` сервиса (см. [source-ip.md](source-ip.md)).
@@ -147,7 +147,7 @@ DNS -> VIP:443
        -> source IP клиента
 ```
 
-### L2 VIP (easyLB speaker)
+### L2 VIP (L2Keeper speaker)
 
 ```text
 DNS -> VIP:443
@@ -166,8 +166,8 @@ ICMP ping -> без ответа (ожидаемо)
 | Режим | Владелец | Где настраивается |
 |---|---|---|
 | `external` | keepalived/администратор | keepalived + `VIPBinding(mode: external)` |
-| `l2` | easyLB speaker | `VIPBinding(mode: l2)` |
-| `bgp` | будущий easyLB speaker | зарезервировано |
+| `l2` | L2Keeper speaker | `VIPBinding(mode: l2)` |
+| `bgp` | будущий L2Keeper speaker | зарезервировано |
 
 Нельзя одновременно держать один VIP в keepalived и в `mode: l2`. Speaker
 проверяет только локальный интерфейс ноды-лидера, поэтому конфликт между
@@ -177,7 +177,7 @@ ICMP ping -> без ответа (ожидаемо)
 
 ### Controller
 
-- 2 реплики, leader election (`Lease easylb.io`, `easylb-system`);
+- 2 реплики, leader election (`Lease l2keeper.github.io`, `l2keeper-system`);
 - PDB `minAvailable: 1`, spread по `kubernetes.io/hostname`;
 - rolling update `maxUnavailable: 0`, `maxSurge: 1`;
 - `LeaderElectionReleaseOnCancel: true`;
@@ -200,11 +200,11 @@ ICMP ping -> без ответа (ожидаемо)
 ### Dataplane
 
 kube-proxy и conntrack — штатные компоненты k3s. Их отказоустойчивость —
-ответственность кластера, не easyLB.
+ответственность кластера, не L2Keeper.
 
 ## Namespaces, RBAC, CRD
 
-- `easylb-system` — controller, speaker, Leases.
+- `l2keeper-system` — controller, speaker, Leases.
 - `VIPPool` — cluster-scoped.
 - `VIPBinding` — namespaced, обычно в namespace Service.
 - Controller RBAC: services/status, nodes, endpointslices, events, leases,

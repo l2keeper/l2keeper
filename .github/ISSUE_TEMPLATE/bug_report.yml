@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible problem with easyLB
+description: Report a reproducible problem with L2Keeper
 title: "bug: "
 labels: ["bug"]
 body:
@@ -31,7 +31,7 @@ body:
       label: Environment
       description: Fill in as much as possible.
       value: |
-        - easyLB version/chart:
+        - L2Keeper version/chart:
         - Kubernetes/k3s/RKE2:
         - Install method (Helm/static):
         - VIP mode (external/l2):

@@ -1,13 +1,13 @@
 {{- if .Values.bindings }}
 {{- range $name, $binding := .Values.bindings }}
 ---
-apiVersion: easylb.io/v1alpha1
+apiVersion: l2keeper.github.io/v1alpha1
 kind: VIPBinding
 metadata:
   name: {{ $name }}
   namespace: {{ required (printf "bindings.%s.namespace is required" $name) $binding.namespace }}
   labels:
-    {{- include "easylb.labels" $ | nindent 4 }}
+    {{- include "l2keeper.labels" $ | nindent 4 }}
 spec:
   serviceRef:
     name: {{ required (printf "bindings.%s.serviceRef is required" $name) $binding.serviceRef }}

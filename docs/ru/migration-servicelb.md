@@ -2,13 +2,13 @@
 
 В k3s/RKE2 встроен ServiceLB (klipper). Он создаёт `svclb`-поды с `hostPort` и
 DNAT+MASQUERADE: появляется лишний хоп, а client source IP может теряться.
-easyLB заменяет этот control plane, не проксируя пакеты: kube-proxy ставит
-правила по адресам, которые публикует easyLB.
+L2Keeper заменяет этот control plane, не проксируя пакеты: kube-proxy ставит
+правила по адресам, которые публикует L2Keeper.
 
 Гайд покрывает оба режима:
 
 - только IP нод — ближе всего к ServiceLB, без VIP;
-- стабильные VIP — L2 speaker easyLB или внешний владелец VIP.
+- стабильные VIP — L2 speaker L2Keeper или внешний владелец VIP.
 
 ## 1. Отключи ServiceLB
 
@@ -25,22 +25,22 @@ sudo systemctl restart k3s
 ```
 
 После рестарта существующие `svclb`-поды удаляются, а `LoadBalancer` Service
-временно остаются без внешнего адреса. Ставь easyLB в это же окно, чтобы
+временно остаются без внешнего адреса. Ставь L2Keeper в это же окно, чтобы
 сократить простой.
 
-## 2. Установи easyLB
+## 2. Установи L2Keeper
 
 ```bash
-helm upgrade --install easylb oci://ghcr.io/bzdvdn/charts/easylb \
+helm upgrade --install l2keeper oci://ghcr.io/l2keeper/charts/l2keeper \
   --version <chart-version> \
-  --namespace easylb-system \
+  --namespace l2keeper-system \
   --create-namespace \
-  -f values-easylb.yaml
+  -f values-l2keeper.yaml
 ```
 
 ### Вариант A: только IP нод
 
-Минимальный шаг от ServiceLB. easyLB публикует IP нод в статусе Service, а
+Минимальный шаг от ServiceLB. L2Keeper публикует IP нод в статусе Service, а
 kube-proxy делает остальное.
 
 ```yaml
@@ -116,12 +116,12 @@ DaemonSet'ы/поды. После отключения k3s ServiceLB controller 
 ## 4. Проверь
 
 ```bash
-kubectl -n easylb-system get deploy,ds,pods
+kubectl -n l2keeper-system get deploy,ds,pods
 kubectl get vippool
 kubectl get vipbinding -A
 kubectl get svc -A --field-selector spec.type=LoadBalancer
-kubectl -n easylb-system get lease
-kubectl -n easylb-system logs ds/easylb-speaker --tail=100
+kubectl -n l2keeper-system get lease
+kubectl -n l2keeper-system logs ds/l2keeper-speaker --tail=100
 ```
 
 Ожидаемо:
@@ -135,14 +135,14 @@ kubectl -n easylb-system logs ds/easylb-speaker --tail=100
 
 ## 5. Откат
 
-1. Удали easyLB (и его `VIPPool`/`VIPBinding`).
+1. Удали L2Keeper (и его `VIPPool`/`VIPBinding`).
 2. Убери `disable: [servicelb]` из конфига k3s и перезапусти k3s.
 3. ServiceLB заново создаст `svclb`-поды для существующих `LoadBalancer`
    Service.
 
 ## Примечания
 
-- Один VIP — один владелец. Не запускай easyLB L2 и keepalived на одном VIP.
+- Один VIP — один владелец. Не запускай L2Keeper L2 и keepalived на одном VIP.
 - Режим IP нод не требует пула, binding'ов и speaker'а.
 - При переходе с IP нод на VIP обнови DNS и поставь `publishNodeIPs: false`,
   чтобы публиковались только VIP.

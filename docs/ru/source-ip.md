@@ -2,7 +2,7 @@
 
 [English](../en/source-ip.md) | **Русский**
 
-Сохранение client source IP определяется не easyLB, а тем, как пакет доходит до
+Сохранение client source IP определяется не L2Keeper, а тем, как пакет доходит до
 backend-поды: DNAT, SNAT, маршрутизацией и `externalTrafficPolicy`.
 
 ## Матрица
@@ -28,7 +28,7 @@ k3s ServiceLB ставит `svclb`-поды с `hostPort`. kube-proxy знает
                               -> ingress видит IP svclb-пода
 ```
 
-easyLB публикует VIP в статусе. kube-proxy получает адрес и делает DNAT сам,
+L2Keeper публикует VIP в статусе. kube-proxy получает адрес и делает DNAT сам,
 без промежуточного пода и без MASQUERADE для внешнего клиента при `Local`.
 
 ## Требования для Local

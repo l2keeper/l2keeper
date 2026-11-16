@@ -1,6 +1,6 @@
-# Contributing to easyLB
+# Contributing to L2Keeper
 
-Thanks for helping improve easyLB. The project is small, so focused issues,
+Thanks for helping improve L2Keeper. The project is small, so focused issues,
 reproducible bug reports, and small pull requests are especially valuable.
 
 ## Ways to contribute
@@ -34,13 +34,13 @@ make helm-template
 Run the local e2e test:
 
 ```bash
-docker build -t easylb:e2e .
-k3d cluster create easylb-e2e --agents 1 \
+docker build -t l2keeper:e2e .
+k3d cluster create l2keeper-e2e --agents 1 \
   --k3s-arg "--disable=servicelb@server:*"
-k3d image import -c easylb-e2e easylb:e2e
+k3d image import -c l2keeper-e2e l2keeper:e2e
 kubectl wait --for=condition=Ready nodes --all --timeout=180s
 make e2e
-k3d cluster delete easylb-e2e
+k3d cluster delete l2keeper-e2e
 ```
 
 See `test/e2e/README.md` for details.

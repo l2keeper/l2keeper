@@ -5,12 +5,12 @@
 ## Первые проверки
 
 ```bash
-kubectl -n easylb-system get deploy,ds,pods -o wide
+kubectl -n l2keeper-system get deploy,ds,pods -o wide
 kubectl get vippool
 kubectl get vipbinding -A -o wide
 kubectl get vipbinding -A -o yaml
 kubectl -n ingress-nginx get svc my-release-ingress-nginx-controller -o wide
-kubectl -n easylb-system get lease
+kubectl -n l2keeper-system get lease
 ```
 
 Дерево проверок:
@@ -38,7 +38,7 @@ kubectl -n easylb-system get lease
 - Логи controller:
 
   ```bash
-  kubectl -n easylb-system logs deploy/easylb-controller --tail=200
+  kubectl -n l2keeper-system logs deploy/l2keeper-controller --tail=200
   ```
 
 - Conditions `VIPBinding` (`Ready`, `reason`).
@@ -66,8 +66,8 @@ kubectl -n easylb-system get lease
 ## Speaker не ready / crashloop
 
 ```bash
-kubectl -n easylb-system describe pod -l app.kubernetes.io/component=speaker
-kubectl -n easylb-system logs ds/easylb-speaker --tail=200
+kubectl -n l2keeper-system describe pod -l app.kubernetes.io/component=speaker
+kubectl -n l2keeper-system logs ds/l2keeper-speaker --tail=200
 ```
 
 Частые причины:
@@ -76,7 +76,7 @@ kubectl -n easylb-system logs ds/easylb-speaker --tail=200
   Проверь:
 
   ```bash
-  kubectl -n easylb-system get ds easylb-speaker \
+  kubectl -n l2keeper-system get ds l2keeper-speaker \
     -o jsonpath='{.spec.template.spec.securityContext}{"\n"}'
   ```
 
@@ -86,7 +86,7 @@ kubectl -n easylb-system logs ds/easylb-speaker --tail=200
 - `no interface owns address`: `InternalIP` ноды не на интерфейсе или неверный
   `nodeIPType`. Задай `speaker.interface` явно или исправь IP ноды.
 - Ошибки Lease/leader election: проверь RBAC на Leases и namespace
-  `easylb-system`.
+  `l2keeper-system`.
 - Конфликт портов `8082`/`8083` в hostNetwork: проверь ноду.
 
 ## `VIPAlreadyAssigned`
@@ -158,7 +158,7 @@ Lease держит несуществующий под. Текущий speaker �
 Lease старее, удали его:
 
 ```bash
-kubectl -n easylb-system delete lease <lease-name>
+kubectl -n l2keeper-system delete lease <lease-name>
 ```
 
 Текущий speaker создаст его заново.
@@ -168,14 +168,14 @@ kubectl -n easylb-system delete lease <lease-name>
 - `no matches for kind "VIPBinding"`: установи `deploy/crds.yaml` или Helm-чарт.
 - `helm upgrade` не обновляет CRD из `crds/`; применяй отдельно.
 - Конфликт ownership со статическими манифестами: удали ресурсы
-  `deploy/easylb.yaml` и `deploy/easylb-speaker.yaml` перед Helm.
+  `deploy/l2keeper.yaml` и `deploy/l2keeper-speaker.yaml` перед Helm.
 - `no matches for kind "ServiceMonitor"`: выключи
   `metrics.serviceMonitor.enabled` или поставь CRD Prometheus Operator.
 
 ## Автоматическая аллокация
 
 - Нет binding'а `auto-<service>`: проверь, что `controller.autoAssignServices`
-  включён, Service — управляемый `LoadBalancer`, `easylb.io/auto-assign` не
+  включён, Service — управляемый `LoadBalancer`, `l2keeper.github.io/auto-assign` не
   равен `"false"`, и хотя бы один `VIPPool` с `autoAssign: true` совпадает по
   selector'ам.
 - Есть явный `VIPBinding`: ручной и Gateway-binding имеют приоритет; удали его,
@@ -196,7 +196,7 @@ kubectl -n easylb-system delete lease <lease-name>
   или `undeclared reference to 'isIP'` → релиз Gateway API слишком новый для
   кластера. v1.5+ требует Kubernetes 1.31+. Удали частично установленные CRD
   `gateway.networking.k8s.io`, поставь v1.4.1 или обнови Kubernetes.
-- `VIPBinding` не создаётся: проверь аннотацию `easylb.io/service`,
+- `VIPBinding` не создаётся: проверь аннотацию `l2keeper.github.io/service`,
   `Gateway.spec.addresses` и что controller реально запущен с
   `--enable-gateway-api=true`.
 - `VIPBinding` есть, а VIP в Service нет: data-plane Service без
@@ -215,9 +215,9 @@ kubectl -n easylb-system delete lease <lease-name>
 ## Полезные команды
 
 ```bash
-kubectl -n easylb-system logs deploy/easylb-controller --tail=200
-kubectl -n easylb-system logs ds/easylb-speaker --tail=200
-kubectl -n easylb-system get lease -o yaml
+kubectl -n l2keeper-system logs deploy/l2keeper-controller --tail=200
+kubectl -n l2keeper-system logs ds/l2keeper-speaker --tail=200
+kubectl -n l2keeper-system get lease -o yaml
 kubectl get vipbinding -A -o yaml
 kubectl -n ingress-nginx get endpoints <service>
 kubectl get events -A --sort-by=.lastTimestamp | tail -30

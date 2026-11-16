@@ -1,6 +1,6 @@
 controller:
   image:
-    repository: easylb
+    repository: l2keeper
     tag: e2e
   publishNodeIPs: false
   requireClass: false

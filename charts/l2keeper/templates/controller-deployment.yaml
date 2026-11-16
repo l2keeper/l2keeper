@@ -2,10 +2,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "easylb.fullname" . }}-controller
+  name: {{ include "l2keeper.fullname" . }}-controller
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "easylb.labels" . | nindent 4 }}
+    {{- include "l2keeper.labels" . | nindent 4 }}
     app.kubernetes.io/component: controller
 spec:
   replicas: {{ .Values.controller.replicas }}
@@ -16,18 +16,18 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      {{- include "easylb.controllerSelectorLabels" . | nindent 6 }}
+      {{- include "l2keeper.controllerSelectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "easylb.labels" . | nindent 8 }}
+        {{- include "l2keeper.labels" . | nindent 8 }}
         app.kubernetes.io/component: controller
       {{- with .Values.controller.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
-      serviceAccountName: {{ include "easylb.fullname" . }}-controller
+      serviceAccountName: {{ include "l2keeper.fullname" . }}-controller
       {{- with .Values.controller.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -54,11 +54,11 @@ spec:
           whenUnsatisfiable: ScheduleAnyway
           labelSelector:
             matchLabels:
-              {{- include "easylb.controllerSelectorLabels" . | nindent 14 }}
+              {{- include "l2keeper.controllerSelectorLabels" . | nindent 14 }}
       {{- end }}
       containers:
         - name: controller
-          image: {{ include "easylb.controllerImage" . }}
+          image: {{ include "l2keeper.controllerImage" . }}
           imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
           args:
             - --load-balancer-class={{ .Values.controller.loadBalancerClass }}

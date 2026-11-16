@@ -8,7 +8,7 @@ controller:
   # workflow. Override repository/tag for forks, private registries, or local
   # builds. An empty tag uses Chart.appVersion.
   image:
-    repository: ghcr.io/bzdvdn/easylb
+    repository: ghcr.io/l2keeper/l2keeper
     tag: ""
     pullPolicy: IfNotPresent
   imagePullSecrets: []
@@ -20,7 +20,7 @@ controller:
   renewDeadline: 10s
   retryPeriod: 2s
 
-  loadBalancerClass: easylb.io/easylb
+  loadBalancerClass: l2keeper.github.io/lb
   requireClass: false
   publishNodeIPs: true
   nodeIPTypes: InternalIP
@@ -69,7 +69,7 @@ speaker:
 
   # Uses the same image and release tag as the controller.
   image:
-    repository: ghcr.io/bzdvdn/easylb
+    repository: ghcr.io/l2keeper/l2keeper
     tag: ""
     pullPolicy: IfNotPresent
   imagePullSecrets: []
@@ -78,7 +78,7 @@ speaker:
   interface: ""
   nodeIPType: InternalIP
 
-  loadBalancerClass: easylb.io/easylb
+  loadBalancerClass: l2keeper.github.io/lb
   requireClass: false
 
   leaseDuration: 15s
@@ -166,7 +166,7 @@ pools: {}
 #     mode: external
 #     vips:
 #       - 192.168.56.250
-#   ingress-easylb:
+#   ingress-l2keeper:
 #     namespace: ingress-nginx
 #     serviceRef: my-release-ingress-nginx-controller
 #     mode: l2

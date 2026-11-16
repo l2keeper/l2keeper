@@ -3,15 +3,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "easylb.fullname" . }}-controller-metrics
+  name: {{ include "l2keeper.fullname" . }}-controller-metrics
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "easylb.labels" . | nindent 4 }}
+    {{- include "l2keeper.labels" . | nindent 4 }}
     app.kubernetes.io/component: controller
 spec:
   type: ClusterIP
   selector:
-    {{- include "easylb.controllerSelectorLabels" . | nindent 4 }}
+    {{- include "l2keeper.controllerSelectorLabels" . | nindent 4 }}
   ports:
     - name: metrics
       port: 8080
@@ -22,15 +22,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "easylb.fullname" . }}-speaker-metrics
+  name: {{ include "l2keeper.fullname" . }}-speaker-metrics
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "easylb.labels" . | nindent 4 }}
+    {{- include "l2keeper.labels" . | nindent 4 }}
     app.kubernetes.io/component: speaker
 spec:
   type: ClusterIP
   selector:
-    {{- include "easylb.speakerSelectorLabels" . | nindent 4 }}
+    {{- include "l2keeper.speakerSelectorLabels" . | nindent 4 }}
   ports:
     - name: metrics
       port: 8082

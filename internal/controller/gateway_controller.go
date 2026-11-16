@@ -20,7 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	easylv1alpha1 "github.com/bzdvdn/easylb/api/v1alpha1"
+	l2keeperv1alpha1 "github.com/l2keeper/l2keeper/api/v1alpha1"
 )
 
 var gatewayGVK = schema.GroupVersionKind{
@@ -30,10 +30,10 @@ var gatewayGVK = schema.GroupVersionKind{
 }
 
 const (
-	gatewayServiceAnnotation = "easylb.io/service"
-	gatewayModeAnnotation    = "easylb.io/vip-mode"
-	gatewayPoolAnnotation    = "easylb.io/vip-pool"
-	gatewayVIPsAnnotation    = "easylb.io/vips"
+	gatewayServiceAnnotation = "l2keeper.github.io/service"
+	gatewayModeAnnotation    = "l2keeper.github.io/vip-mode"
+	gatewayPoolAnnotation    = "l2keeper.github.io/vip-pool"
+	gatewayVIPsAnnotation    = "l2keeper.github.io/vips"
 	gatewayBindingPrefix     = "gateway-"
 )
 
@@ -88,7 +88,7 @@ func (r *GatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	desired := desiredBinding(gateway, serviceName, mode, vips, poolRef)
 
-	var existing easylv1alpha1.VIPBinding
+	var existing l2keeperv1alpha1.VIPBinding
 	if err := r.Get(ctx, bindingKey, &existing); err != nil {
 		if client.IgnoreNotFound(err) != nil {
 			return ctrl.Result{}, err
@@ -130,14 +130,14 @@ func (r *GatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return ctrl.Result{RequeueAfter: r.RequeueAfter}, nil
 }
 
-func desiredBinding(gateway *unstructured.Unstructured, serviceName string, mode easylv1alpha1.VIPMode, vips []string, poolRef string) *easylv1alpha1.VIPBinding {
-	binding := &easylv1alpha1.VIPBinding{
+func desiredBinding(gateway *unstructured.Unstructured, serviceName string, mode l2keeperv1alpha1.VIPMode, vips []string, poolRef string) *l2keeperv1alpha1.VIPBinding {
+	binding := &l2keeperv1alpha1.VIPBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gatewayBindingName(gateway.GetName()),
 			Namespace: gateway.GetNamespace(),
 			Labels: map[string]string{
-				"app.kubernetes.io/managed-by": "easylb",
-				"easylb.io/gateway":            gateway.GetName(),
+				"app.kubernetes.io/managed-by": "l2keeper",
+				"l2keeper.github.io/gateway":   gateway.GetName(),
 			},
 			OwnerReferences: []metav1.OwnerReference{{
 				APIVersion:         gatewayGVK.GroupVersion().String(),
@@ -148,20 +148,20 @@ func desiredBinding(gateway *unstructured.Unstructured, serviceName string, mode
 				BlockOwnerDeletion: ptr.To(false),
 			}},
 		},
-		Spec: easylv1alpha1.VIPBindingSpec{
-			ServiceRef: easylv1alpha1.ServiceReference{Name: serviceName},
+		Spec: l2keeperv1alpha1.VIPBindingSpec{
+			ServiceRef: l2keeperv1alpha1.ServiceReference{Name: serviceName},
 			Mode:       mode,
 			VIPs:       vips,
 		},
 	}
 	if poolRef != "" {
-		binding.Spec.PoolRef = &easylv1alpha1.PoolReference{Name: poolRef}
+		binding.Spec.PoolRef = &l2keeperv1alpha1.PoolReference{Name: poolRef}
 	}
 	return binding
 }
 
 func (r *GatewayReconciler) deleteOwnedBinding(ctx context.Context, gateway *unstructured.Unstructured, key types.NamespacedName) error {
-	var binding easylv1alpha1.VIPBinding
+	var binding l2keeperv1alpha1.VIPBinding
 	if err := r.Get(ctx, key, &binding); err != nil {
 		return client.IgnoreNotFound(err)
 	}
@@ -171,7 +171,7 @@ func (r *GatewayReconciler) deleteOwnedBinding(ctx context.Context, gateway *uns
 	return client.IgnoreNotFound(r.Delete(ctx, &binding))
 }
 
-func ownedByGateway(binding *easylv1alpha1.VIPBinding, gateway *unstructured.Unstructured) bool {
+func ownedByGateway(binding *l2keeperv1alpha1.VIPBinding, gateway *unstructured.Unstructured) bool {
 	for _, ref := range binding.OwnerReferences {
 		if ref.UID != "" && gateway.GetUID() != "" {
 			if ref.UID == gateway.GetUID() {
@@ -188,14 +188,14 @@ func ownedByGateway(binding *easylv1alpha1.VIPBinding, gateway *unstructured.Uns
 	return false
 }
 
-func gatewayMode(annotations map[string]string) (easylv1alpha1.VIPMode, error) {
+func gatewayMode(annotations map[string]string) (l2keeperv1alpha1.VIPMode, error) {
 	switch strings.ToLower(strings.TrimSpace(annotations[gatewayModeAnnotation])) {
-	case "", string(easylv1alpha1.VIPModeExternal):
-		return easylv1alpha1.VIPModeExternal, nil
-	case string(easylv1alpha1.VIPModeL2):
-		return easylv1alpha1.VIPModeL2, nil
-	case string(easylv1alpha1.VIPModeBGP):
-		return easylv1alpha1.VIPModeBGP, nil
+	case "", string(l2keeperv1alpha1.VIPModeExternal):
+		return l2keeperv1alpha1.VIPModeExternal, nil
+	case string(l2keeperv1alpha1.VIPModeL2):
+		return l2keeperv1alpha1.VIPModeL2, nil
+	case string(l2keeperv1alpha1.VIPModeBGP):
+		return l2keeperv1alpha1.VIPModeBGP, nil
 	default:
 		return "", fmt.Errorf("unsupported %s value %q (supported: external, l2, bgp)",
 			gatewayModeAnnotation, annotations[gatewayModeAnnotation])
@@ -276,6 +276,6 @@ func (r *GatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	gateway.SetGroupVersionKind(gatewayGVK)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(gateway).
-		Owns(&easylv1alpha1.VIPBinding{}).
+		Owns(&l2keeperv1alpha1.VIPBinding{}).
 		Complete(r)
 }

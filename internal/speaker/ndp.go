@@ -10,7 +10,7 @@ import (
 	"github.com/mdlayher/ndp"
 	"golang.org/x/net/ipv6"
 
-	"github.com/bzdvdn/easylb/internal/metrics"
+	"github.com/l2keeper/l2keeper/internal/metrics"
 )
 
 type ndpResponder struct {

@@ -6,23 +6,23 @@
 
 ```bash
 # install
-helm upgrade --install easylb charts/easylb \
-  --namespace easylb-system \
+helm upgrade --install l2keeper charts/l2keeper \
+  --namespace l2keeper-system \
   --create-namespace \
   -f my-values.yaml
 
 # upgrade
-helm upgrade easylb charts/easylb \
-  --namespace easylb-system \
+helm upgrade l2keeper charts/l2keeper \
+  --namespace l2keeper-system \
   -f my-values.yaml
 
 # uninstall (CRDs stay)
-helm uninstall easylb -n easylb-system
+helm uninstall l2keeper -n l2keeper-system
 ```
 
 Notes:
 
-- CRDs from `charts/easylb/crds/` are installed on the first `helm install` and
+- CRDs from `charts/l2keeper/crds/` are installed on the first `helm install` and
   are **not** updated by `helm upgrade`. Apply `deploy/crds.yaml` separately
   when the schema changes.
 - `helm uninstall` does not remove CRDs. Removing a CRD deletes all
@@ -32,11 +32,11 @@ Notes:
 
 ### What uninstall cleans up
 
-easyLB never installs iptables/ipvs rules itself: kube-proxy derives them from
+L2Keeper never installs iptables/ipvs rules itself: kube-proxy derives them from
 `Service.status.loadBalancer.ingress`. Keep that in mind when removing the
 release.
 
-`helm uninstall easylb -n easylb-system` removes:
+`helm uninstall l2keeper -n l2keeper-system` removes:
 
 - the controller Deployment and the speaker DaemonSet;
 - ServiceAccounts, ClusterRoles/ClusterRoleBindings, and the PDB;
@@ -47,10 +47,10 @@ release.
 
 It does **not** remove:
 
-- CRDs from `charts/easylb/crds/`;
+- CRDs from `charts/l2keeper/crds/`;
 - `VIPPool`/`VIPBinding` objects created outside the release, including
   `auto-<service>` bindings created by automatic allocation;
-- the `easylb-system` namespace (including `--create-namespace`);
+- the `l2keeper-system` namespace (including `--create-namespace`);
 - `Service.status.loadBalancer.ingress` entries already published;
 - runtime Leases that are not deleted by a graceful shutdown;
 - iptables/ipvs rules — those belong to kube-proxy.
@@ -63,7 +63,7 @@ What happens to traffic after uninstall:
   unreachable.
 - `mode: external` VIPs keep working for as long as keepalived owns the address
   and the VIP remains in Service status: kube-proxy keeps the DNAT rules even
-  without easyLB. This is a stale configuration, not a supported steady state.
+  without L2Keeper. This is a stale configuration, not a supported steady state.
 - Node IPs published by the controller also stay in status.
 
 Full cleanup after uninstall:
@@ -80,11 +80,11 @@ kubectl -n <namespace> patch svc <service> --type merge \
   -p '{"status":{"loadBalancer":{"ingress":[]}}}' --subresource=status
 
 # Remove stale runtime Leases if the namespace is kept.
-kubectl -n easylb-system get lease
-kubectl -n easylb-system delete lease <name>
+kubectl -n l2keeper-system get lease
+kubectl -n l2keeper-system delete lease <name>
 
 # Optional, destructive: deletes all VIPPool/VIPBinding objects.
-kubectl delete crd vippools.easylb.io vipbindings.easylb.io
+kubectl delete crd vippools.l2keeper.github.io vipbindings.l2keeper.github.io
 ```
 
 Deleting the `VIPBinding` is the supported way to make the speaker stop
@@ -95,7 +95,7 @@ that patches Service status on uninstall.
 
 The chart runs 2 replicas with:
 
-- leader election (`Lease easylb.io` in `easylb-system`);
+- leader election (`Lease l2keeper.github.io` in `l2keeper-system`);
 - `LeaderElectionReleaseOnCancel: true`;
 - PDB `minAvailable: 1`;
 - topology spread by `kubernetes.io/hostname`;
@@ -115,7 +115,7 @@ Failure behavior:
 ## Speaker HA
 
 The speaker is a DaemonSet, one pod per node. For each `mode: l2` VIPBinding it
-runs a leader election through a per-VIP `Lease` in `easylb-system`.
+runs a leader election through a per-VIP `Lease` in `l2keeper-system`.
 
 - Graceful shutdown releases the Lease immediately (process context is tied to
   the signal handler).
@@ -132,7 +132,7 @@ property of any L4 VIP.
 Controller (controller-runtime metrics on `:8080`):
 
 ```promql
-leader_election_master_status{name="easylb.io"}
+leader_election_master_status{name="l2keeper.github.io"}
 controller_runtime_reconcile_errors_total
 controller_runtime_reconcile_total
 controller_runtime_reconcile_time_seconds
@@ -140,18 +140,18 @@ controller_runtime_reconcile_time_seconds
 
 Custom controller metrics:
 
-- `easylb_controller_vip_allocations_total{result,reason}`;
-- `easylb_controller_auto_bindings_total{action}`.
+- `l2keeper_controller_vip_allocations_total{result,reason}`;
+- `l2keeper_controller_auto_bindings_total{action}`.
 
 Speaker (controller-runtime metrics on `:8082`):
 
 - `controller_runtime_reconcile_*` for the `vipbinding` controller;
 - logs: `advertising VIPs`, `stopped leading`, `failed to start ARP responder`,
   `failed to start NDP responder`, `VIPAlreadyAssigned`;
-- `easylb_speaker_advertised_vips{node,binding}` — VIPs currently advertised;
-- `easylb_speaker_leader_changes_total{node}`;
-- `easylb_speaker_errors_total{interface,protocol,operation}`;
-- Leases in `easylb-system` show the current holder;
+- `l2keeper_speaker_advertised_vips{node,binding}` — VIPs currently advertised;
+- `l2keeper_speaker_leader_changes_total{node}`;
+- `l2keeper_speaker_errors_total{interface,protocol,operation}`;
+- Leases in `l2keeper-system` show the current holder;
 - with kube-state-metrics, `kube_lease_owner` / `kube_lease_renew_time` are
   useful for Lease age.
 
@@ -160,10 +160,10 @@ The chart can create metrics Services and a Prometheus Operator
 
 Useful alerts:
 
-- `leader_election_master_status{name="easylb.io"} != 1` for 30s;
+- `leader_election_master_status{name="l2keeper.github.io"} != 1` for 30s;
 - `rate(controller_runtime_reconcile_errors_total[5m]) > 0.1`;
 - speaker DaemonSet not fully ready:
-  `kube_daemonset_status_number_ready{daemonset="easylb-speaker"} < kube_daemonset_status_desired_number_scheduled`;
+  `kube_daemonset_status_number_ready{daemonset="l2keeper-speaker"} < kube_daemonset_status_desired_number_scheduled`;
 - a VIPBinding stuck without `Ready=True` (kube-state-metrics or a custom
   exporter);
 - Lease not renewed for longer than `leaseDuration` (kube-state-metrics).
@@ -180,11 +180,11 @@ cat /proc/sys/net/netfilter/nf_conntrack_max
 - Controller: non-root, read-only root filesystem, drops all capabilities.
 - Speaker: `hostNetwork`, root, `NET_RAW`; required for ARP/NDP raw sockets. It
   drops all other capabilities.
-- With Pod Security Admission, the `easylb-system` namespace must allow the
+- With Pod Security Admission, the `l2keeper-system` namespace must allow the
   speaker, for example:
 
   ```bash
-  kubectl label namespace easylb-system \
+  kubectl label namespace l2keeper-system \
     pod-security.kubernetes.io/enforce=privileged --overwrite
   ```
 
@@ -207,8 +207,8 @@ cat /proc/sys/net/netfilter/nf_conntrack_max
 5. Verify:
 
    ```bash
-   kubectl -n easylb-system rollout status deploy/easylb-controller
-   kubectl -n easylb-system rollout status ds/easylb-speaker
+   kubectl -n l2keeper-system rollout status deploy/l2keeper-controller
+   kubectl -n l2keeper-system rollout status ds/l2keeper-speaker
    kubectl get vipbinding -A
    ```
 
@@ -223,25 +223,25 @@ cat /proc/sys/net/netfilter/nf_conntrack_max
 - The IP allocator is single-writer (`MaxConcurrentReconciles: 1`); this is
   fine for small and medium clusters.
 - kube-proxy/conntrack are the bottleneck for large numbers of long-lived
-  sessions, not easyLB.
+  sessions, not L2Keeper.
 
 ## Runbook
 
 ### Controller leader failover
 
 ```bash
-kubectl -n easylb-system get lease easylb.io -o jsonpath='{.spec.holderIdentity}{"\n"}'
-kubectl -n easylb-system get pods -o wide
+kubectl -n l2keeper-system get lease l2keeper.github.io -o jsonpath='{.spec.holderIdentity}{"\n"}'
+kubectl -n l2keeper-system get pods -o wide
 ```
 
 If no leader appears within ~30s, check controller logs and that the
-`easylb-system` namespace and Lease RBAC exist.
+`l2keeper-system` namespace and Lease RBAC exist.
 
 ### Speaker / VIP failover
 
 ```bash
-kubectl -n easylb-system get lease -o wide
-kubectl -n easylb-system logs ds/easylb-speaker --tail=200
+kubectl -n l2keeper-system get lease -o wide
+kubectl -n l2keeper-system logs ds/l2keeper-speaker --tail=200
 arping -c 3 <VIP>
 ```
 
@@ -250,7 +250,7 @@ If the Lease holder is a pod that no longer exists and the Lease is older than
 
 ### Keepalived failover
 
-Keepalived is outside easyLB. Check VRRP state, VIP ownership, and the
+Keepalived is outside L2Keeper. Check VRRP state, VIP ownership, and the
 `healthCheckNodePort` script. The VIP must be on a node with a local ingress
 endpoint for `Local`.
 

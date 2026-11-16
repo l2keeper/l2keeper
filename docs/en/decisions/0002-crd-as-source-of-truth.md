@@ -16,7 +16,7 @@ status.
 
 ## Options
 
-1. Service annotations (`easylb.io/vips`, `easylb.io/vip-config`).
+1. Service annotations (`l2keeper.github.io/vips`, `l2keeper.github.io/vip-config`).
 2. A ConfigMap with a global VIP list.
 3. CRDs: `VIPPool` and `VIPBinding`.
 

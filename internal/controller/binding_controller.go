@@ -19,9 +19,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	easylv1alpha1 "github.com/bzdvdn/easylb/api/v1alpha1"
-	"github.com/bzdvdn/easylb/internal/ipam"
-	"github.com/bzdvdn/easylb/internal/metrics"
+	l2keeperv1alpha1 "github.com/l2keeper/l2keeper/api/v1alpha1"
+	"github.com/l2keeper/l2keeper/internal/ipam"
+	"github.com/l2keeper/l2keeper/internal/metrics"
 )
 
 const conditionReady = "Ready"
@@ -36,7 +36,7 @@ type VIPBindingReconciler struct {
 func (r *VIPBindingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var binding easylv1alpha1.VIPBinding
+	var binding l2keeperv1alpha1.VIPBinding
 	if err := r.Get(ctx, req.NamespacedName, &binding); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -66,7 +66,7 @@ func (r *VIPBindingReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	return ctrl.Result{RequeueAfter: r.RequeueAfter}, nil
 }
 
-func (r *VIPBindingReconciler) resolve(ctx context.Context, binding *easylv1alpha1.VIPBinding) ([]string, metav1.Condition) {
+func (r *VIPBindingReconciler) resolve(ctx context.Context, binding *l2keeperv1alpha1.VIPBinding) ([]string, metav1.Condition) {
 	if binding.Spec.ServiceRef.Name == "" {
 		return nil, readyCondition(binding, metav1.ConditionFalse, "InvalidSpec", "spec.serviceRef.name is required")
 	}
@@ -86,7 +86,7 @@ func (r *VIPBindingReconciler) resolve(ctx context.Context, binding *easylv1alph
 	return r.resolvePool(ctx, binding)
 }
 
-func (r *VIPBindingReconciler) resolveExplicit(ctx context.Context, binding *easylv1alpha1.VIPBinding) ([]string, metav1.Condition) {
+func (r *VIPBindingReconciler) resolveExplicit(ctx context.Context, binding *l2keeperv1alpha1.VIPBinding) ([]string, metav1.Condition) {
 	ips, err := canonicalIPs(binding.Spec.VIPs)
 	if err != nil {
 		return nil, readyCondition(binding, metav1.ConditionFalse, "InvalidVIP", err.Error())
@@ -110,8 +110,8 @@ func (r *VIPBindingReconciler) resolveExplicit(ctx context.Context, binding *eas
 	return out, readyCondition(binding, metav1.ConditionTrue, "Explicit", "explicit VIPs are configured")
 }
 
-func (r *VIPBindingReconciler) resolvePool(ctx context.Context, binding *easylv1alpha1.VIPBinding) ([]string, metav1.Condition) {
-	var pool easylv1alpha1.VIPPool
+func (r *VIPBindingReconciler) resolvePool(ctx context.Context, binding *l2keeperv1alpha1.VIPBinding) ([]string, metav1.Condition) {
+	var pool l2keeperv1alpha1.VIPPool
 	if err := r.Get(ctx, types.NamespacedName{Name: binding.Spec.PoolRef.Name}, &pool); err != nil {
 		if client.IgnoreNotFound(err) == nil {
 			// Keep the previous allocation during a transient pool outage.
@@ -171,8 +171,8 @@ func (r *VIPBindingReconciler) resolvePool(ctx context.Context, binding *easylv1
 		fmt.Sprintf("VIPPool %q has no free addresses", pool.Name))
 }
 
-func (r *VIPBindingReconciler) usedAddresses(ctx context.Context, current *easylv1alpha1.VIPBinding) (map[netip.Addr]struct{}, error) {
-	var list easylv1alpha1.VIPBindingList
+func (r *VIPBindingReconciler) usedAddresses(ctx context.Context, current *l2keeperv1alpha1.VIPBinding) (map[netip.Addr]struct{}, error) {
+	var list l2keeperv1alpha1.VIPBindingList
 	if err := r.List(ctx, &list); err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func (r *VIPBindingReconciler) usedAddresses(ctx context.Context, current *easyl
 	return used, nil
 }
 
-func (r *VIPBindingReconciler) canShare(ctx context.Context, a, b *easylv1alpha1.VIPBinding) bool {
+func (r *VIPBindingReconciler) canShare(ctx context.Context, a, b *l2keeperv1alpha1.VIPBinding) bool {
 	if a.Spec.SharingKey == "" || a.Spec.SharingKey != b.Spec.SharingKey {
 		return false
 	}
@@ -215,7 +215,7 @@ func (r *VIPBindingReconciler) canShare(ctx context.Context, a, b *easylv1alpha1
 	return !portsConflict(aSvc, bSvc)
 }
 
-func (r *VIPBindingReconciler) bindingService(ctx context.Context, binding *easylv1alpha1.VIPBinding) (*corev1.Service, error) {
+func (r *VIPBindingReconciler) bindingService(ctx context.Context, binding *l2keeperv1alpha1.VIPBinding) (*corev1.Service, error) {
 	if binding.Spec.ServiceRef.Name == "" {
 		return nil, nil
 	}
@@ -226,7 +226,7 @@ func (r *VIPBindingReconciler) bindingService(ctx context.Context, binding *easy
 	return &svc, nil
 }
 
-func currentAllocation(binding *easylv1alpha1.VIPBinding, pool []netip.Addr, used map[netip.Addr]struct{}) (netip.Addr, bool) {
+func currentAllocation(binding *l2keeperv1alpha1.VIPBinding, pool []netip.Addr, used map[netip.Addr]struct{}) (netip.Addr, bool) {
 	if len(binding.Status.AllocatedIPs) != 1 {
 		return netip.Addr{}, false
 	}
@@ -280,14 +280,14 @@ func containsAddress(addresses []netip.Addr, target netip.Addr) bool {
 	return false
 }
 
-func usablePoolAddresses(pool *easylv1alpha1.VIPPool, addresses []netip.Addr) []netip.Addr {
+func usablePoolAddresses(pool *l2keeperv1alpha1.VIPPool, addresses []netip.Addr) []netip.Addr {
 	if !pool.Spec.AvoidBuggyIPs {
 		return addresses
 	}
 	return ipam.FilterBuggyIPv4(addresses)
 }
 
-func readyCondition(binding *easylv1alpha1.VIPBinding, status metav1.ConditionStatus, reason, message string) metav1.Condition {
+func readyCondition(binding *l2keeperv1alpha1.VIPBinding, status metav1.ConditionStatus, reason, message string) metav1.Condition {
 	return metav1.Condition{
 		Type:               conditionReady,
 		Status:             status,
@@ -300,18 +300,18 @@ func readyCondition(binding *easylv1alpha1.VIPBinding, status metav1.ConditionSt
 // SetupWithManager registers the controller with the manager.
 func (r *VIPBindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&easylv1alpha1.VIPBinding{}).
-		Watches(&easylv1alpha1.VIPPool{}, handler.EnqueueRequestsFromMapFunc(r.bindingsForPool)).
+		For(&l2keeperv1alpha1.VIPBinding{}).
+		Watches(&l2keeperv1alpha1.VIPPool{}, handler.EnqueueRequestsFromMapFunc(r.bindingsForPool)).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
 		Complete(r)
 }
 
 func (r *VIPBindingReconciler) bindingsForPool(ctx context.Context, obj client.Object) []reconcile.Request {
-	pool, ok := obj.(*easylv1alpha1.VIPPool)
+	pool, ok := obj.(*l2keeperv1alpha1.VIPPool)
 	if !ok {
 		return nil
 	}
-	var list easylv1alpha1.VIPBindingList
+	var list l2keeperv1alpha1.VIPBindingList
 	if err := r.List(ctx, &list); err != nil {
 		return nil
 	}

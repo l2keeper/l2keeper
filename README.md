@@ -1,19 +1,19 @@
-![easyLB](docs/assets/easylb-banner.svg)
+![L2Keeper](docs/assets/l2keeper-banner.svg)
 
-# easyLB
+# L2Keeper
 
-[![CI](https://github.com/bzdvdn/easylb/actions/workflows/ci.yaml/badge.svg)](https://github.com/bzdvdn/easylb/actions/workflows/ci.yaml)
-[![E2E](https://github.com/bzdvdn/easylb/actions/workflows/e2e.yaml/badge.svg)](https://github.com/bzdvdn/easylb/actions/workflows/e2e.yaml)
-[![Docs](https://github.com/bzdvdn/easylb/actions/workflows/docs.yaml/badge.svg)](https://bzdvdn.github.io/easylb/)
-[![Release](https://img.shields.io/github/v/release/bzdvdn/easylb?sort=semver)](https://github.com/bzdvdn/easylb/releases)
-[![Go](https://img.shields.io/github/go-mod/go-version/bzdvdn/easylb)](go.mod)
+[![CI](https://github.com/l2keeper/l2keeper/actions/workflows/ci.yaml/badge.svg)](https://github.com/l2keeper/l2keeper/actions/workflows/ci.yaml)
+[![E2E](https://github.com/l2keeper/l2keeper/actions/workflows/e2e.yaml/badge.svg)](https://github.com/l2keeper/l2keeper/actions/workflows/e2e.yaml)
+[![Docs](https://github.com/l2keeper/l2keeper/actions/workflows/docs.yaml/badge.svg)](https://l2keeper.github.io/l2keeper/)
+[![Release](https://img.shields.io/github/v/release/l2keeper/l2keeper?sort=semver)](https://github.com/l2keeper/l2keeper/releases)
+[![Go](https://img.shields.io/github/go-mod/go-version/l2keeper/l2keeper)](go.mod)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 **English** | [Русский](README.ru.md)
 
 **Lightweight Kubernetes LoadBalancer and ServiceLB / MetalLB L2 replacement for bare-metal, on-prem, k3s and RKE2 clusters.**
 
-easyLB publishes node IPs and VIPs into `Service.status.loadBalancer.ingress`
+L2Keeper publishes node IPs and VIPs into `Service.status.loadBalancer.ingress`
 and leaves the entire dataplane to the built-in **kube-proxy** — no extra pod,
 NAT hop, or packet proxying.
 
@@ -22,17 +22,17 @@ mode in small bare-metal clusters that do not need BGP or MetalLB's advanced
 traffic-engineering features.
 
 You can bring VIPs you already own (keepalived/VRRP, a hardware load balancer,
-another controller) and let easyLB publish them, or let easyLB provide a
+another controller) and let L2Keeper publish them, or let L2Keeper provide a
 complete HA load balancer itself through its L2 speaker, ARP and per-VIP leader
 election.
 
-## Why easyLB
+## Why L2Keeper
 
 Kubernetes on-prem usually has no cloud load balancer. The built-in k3s/RKE2
 ServiceLB (klipper) fills the gap with `svclb` pods using `hostPort` and
 DNAT+MASQUERADE. That adds a hop and can hide the client source IP.
 
-easyLB takes the control-plane route: it writes the desired addresses into the
+L2Keeper takes the control-plane route: it writes the desired addresses into the
 Service status, and kube-proxy programs the DNAT rules:
 
 ```text
@@ -43,11 +43,11 @@ client -> NodeIP or VIP -> kube-proxy -> ingress-nginx / pods
 
 With `externalTrafficPolicy: Local` and a local Ready endpoint, the client
 source IP is preserved, and no `svclb` pod or extra NAT hop is involved. The
-same Service can use an existing VIP or an easyLB-managed L2 VIP.
+same Service can use an existing VIP or an L2Keeper-managed L2 VIP.
 
 ## Who it is for
 
-easyLB targets small and medium **bare-metal / on-prem** clusters where:
+L2Keeper targets small and medium **bare-metal / on-prem** clusters where:
 
 - Kubernetes has no cloud load balancer, but `Service` type `LoadBalancer` is
   still needed;
@@ -58,7 +58,7 @@ easyLB targets small and medium **bare-metal / on-prem** clusters where:
 - ingress-nginx or a Gateway API data plane runs as a Service/DaemonSet;
 - client source IP matters (`externalTrafficPolicy: Local`).
 
-easyLB is **not** intended for:
+L2Keeper is **not** intended for:
 
 - public-cloud/NAT scenarios that need a hostPort fallback;
 - `loadBalancerSourceRanges` enforcement;
@@ -78,7 +78,7 @@ easyLB is **not** intended for:
 - Publishes node IPs and VIPs into `status.loadBalancer.ingress`.
 - Bring-your-own-VIP mode (`external`) for keepalived/VRRP, hardware LBs, or
   any externally managed address.
-- Native L2 mode (`l2`): easyLB owns the VIP, advertises IPv4 with ARP and
+- Native L2 mode (`l2`): L2Keeper owns the VIP, advertises IPv4 with ARP and
   IPv6 with NDP, and provides leader election and failover through Kubernetes
   Leases.
 - Automatic VIP allocation from `VIPPool`, or explicit addresses in
@@ -93,7 +93,7 @@ easyLB is **not** intended for:
 
 ## Comparison
 
-| | ServiceLB | MetalLB L2 | easyLB |
+| | ServiceLB | MetalLB L2 | L2Keeper |
 |---|---|---|---|
 | Dataplane | hostPort + `svclb` pods | kube-proxy | kube-proxy |
 | IPAM | no | `IPAddressPool` | `VIPPool` |
@@ -109,12 +109,12 @@ Full comparison: [docs/en/comparison.md](docs/en/comparison.md).
 
 | Mode | VIP owner | Speaker | ICMP ping | Use case |
 |---|---|---|---|---|
-| `external` | keepalived/VRRP, hardware LB, or admin | no | yes, if assigned | integrate VIPs you already own; easyLB only publishes status |
-| `l2` | easyLB speaker | yes | no (ARP/NDP only) | complete HA LB without keepalived, BGP, or MetalLB |
+| `external` | keepalived/VRRP, hardware LB, or admin | no | yes, if assigned | integrate VIPs you already own; L2Keeper only publishes status |
+| `l2` | L2Keeper speaker | yes | no (ARP/NDP only) | complete HA LB without keepalived, BGP, or MetalLB |
 | `bgp` | reserved | future | — | future BGP mode |
 
 Both modes can be mixed on one Service: create one binding for an existing
-keepalived VIP and another for an easyLB-managed L2 VIP.
+keepalived VIP and another for an L2Keeper-managed L2 VIP.
 
 For `l2`, the VIP is **not assigned to the interface**: the speaker answers
 ARP, and kube-proxy handles TCP/HTTP. `ping` therefore does not work for such
@@ -125,15 +125,15 @@ a VIP — this is expected (the same as MetalLB L2). Use TCP checks instead.
 ### 1. Image
 
 ```bash
-docker build -t <registry>/easylb:<tag> .
-docker push <registry>/easylb:<tag>
+docker build -t <registry>/l2keeper:<tag> .
+docker push <registry>/l2keeper:<tag>
 ```
 
 ### 2. Helm
 
 ```bash
-helm upgrade --install easylb charts/easylb \
-  --namespace easylb-system \
+helm upgrade --install l2keeper charts/l2keeper \
+  --namespace l2keeper-system \
   --create-namespace \
   -f my-values.yaml
 ```
@@ -141,9 +141,9 @@ helm upgrade --install easylb charts/easylb \
 The released chart is also published as an OCI artifact:
 
 ```bash
-helm upgrade --install easylb oci://ghcr.io/bzdvdn/charts/easylb \
+helm upgrade --install l2keeper oci://ghcr.io/l2keeper/charts/l2keeper \
   --version <chart-version> \
-  --namespace easylb-system \
+  --namespace l2keeper-system \
   --create-namespace \
   -f my-values.yaml
 ```
@@ -153,14 +153,14 @@ Minimal `my-values.yaml`:
 ```yaml
 controller:
   image:
-    repository: <registry>/easylb
+    repository: <registry>/l2keeper
     tag: <tag>
   publishNodeIPs: true      # false if DNS only uses VIPs
 
 speaker:
   enabled: true
   image:
-    repository: <registry>/easylb
+    repository: <registry>/l2keeper
     tag: <tag>
 
 pools:
@@ -170,7 +170,7 @@ pools:
     autoAssign: true
 
 bindings:
-  ingress-easylb:
+  ingress-l2keeper:
     namespace: ingress-nginx
     serviceRef: my-release-ingress-nginx-controller
     mode: l2
@@ -184,7 +184,7 @@ bindings:
       - 192.168.56.250
 ```
 
-A ready-to-use example is in `charts/easylb/values-example.yaml`.
+A ready-to-use example is in `charts/l2keeper/values-example.yaml`.
 
 Alternatively, omit the `bindings` section: a pool with `autoAssign: true`
 creates `auto-<service>` bindings for matching `LoadBalancer` Services, like
@@ -193,10 +193,10 @@ MetalLB. See [automatic allocation](docs/en/configuration.md#auto-allocation).
 ### 3. Verification
 
 ```bash
-kubectl -n easylb-system get deploy,ds,pods
+kubectl -n l2keeper-system get deploy,ds,pods
 kubectl get vippool
 kubectl get vipbinding -A
-kubectl -n easylb-system get lease
+kubectl -n l2keeper-system get lease
 kubectl -n ingress-nginx get svc my-release-ingress-nginx-controller -o wide
 ```
 
@@ -213,7 +213,7 @@ curl -k -H 'Host: echo1.local' https://192.168.56.240/
 CRDs are the source of truth:
 
 ```yaml
-apiVersion: easylb.io/v1alpha1
+apiVersion: l2keeper.github.io/v1alpha1
 kind: VIPPool
 metadata:
   name: ingress-vips
@@ -222,10 +222,10 @@ spec:
     - 192.168.56.240-192.168.56.249
   autoAssign: true
 ---
-apiVersion: easylb.io/v1alpha1
+apiVersion: l2keeper.github.io/v1alpha1
 kind: VIPBinding
 metadata:
-  name: ingress-easylb
+  name: ingress-l2keeper
   namespace: ingress-nginx
 spec:
   serviceRef:
@@ -236,7 +236,7 @@ spec:
   # requestedIP: 192.168.56.240
 ```
 
-Service annotations (`easylb.io/vips`, `easylb.io/vip-config`) are no longer
+Service annotations (`l2keeper.github.io/vips`, `l2keeper.github.io/vip-config`) are no longer
 used. See [docs/en/configuration.md](docs/en/configuration.md).
 
 ## Source IP
@@ -259,16 +259,16 @@ Details: [docs/en/source-ip.md](docs/en/source-ip.md).
 
 Gateway API implementations (Envoy Gateway, NGINX Gateway Fabric, Cilium,
 Traefik, Kong, Istio, ...) expose their data plane through a `Service` of type
-`LoadBalancer`. easyLB manages that Service exactly like ingress-nginx. With
-`gatewayAPI.enabled: true`, easyLB also watches `Gateway` objects in the stable
+`LoadBalancer`. L2Keeper manages that Service exactly like ingress-nginx. With
+`gatewayAPI.enabled: true`, L2Keeper also watches `Gateway` objects in the stable
 `gateway.networking.k8s.io/v1` API and creates the `VIPBinding` automatically
 from `Gateway.spec.addresses` and a few annotations.
 
-easyLB does not depend on a specific implementation or Gateway API release: it
+L2Keeper does not depend on a specific implementation or Gateway API release: it
 uses unstructured objects and reads only the stable `v1` surface, so newer
 fields and resources are ignored instead of breaking reconciliation. Gateway
 API v1.5+ requires Kubernetes 1.31+; on older clusters use v1.4.1 (or v1.0.0
-for Kubernetes 1.25) as long as the CRDs serve the `v1` API. easyLB does not
+for Kubernetes 1.25) as long as the CRDs serve the `v1` API. L2Keeper does not
 implement ListenerSet, TLSRoute, gateway status handling, or other new Gateway
 API features.
 
@@ -283,7 +283,7 @@ See [docs/en/gateway-api.md](docs/en/gateway-api.md).
   `leaseDuration` (15s).
 - kube-proxy/conntrack remain the dataplane. Established TCP sessions break
   when the VIP owner or the backend pod changes — a property of any L4 VIP, not
-  of easyLB.
+  of L2Keeper.
 - If DNS uses node IPs, keep `publishNodeIPs: true`; with `false` only VIPs are
   published.
 
@@ -297,19 +297,19 @@ See [docs/en/gateway-api.md](docs/en/gateway-api.md).
   Admission the namespace must allow this (for example,
   `pod-security.kubernetes.io/enforce=privileged`);
 - an l2 VIP does not answer ICMP;
-- easyLB does not detect a conflict with an external VIP owner. One VIP must
+- L2Keeper does not detect a conflict with an external VIP owner. One VIP must
   have exactly one owner; this is a configuration responsibility.
 
 ## Community
 
-- Questions and ideas: [GitHub Discussions](https://github.com/bzdvdn/easylb/discussions)
-- Bugs and feature requests: [Issues](https://github.com/bzdvdn/easylb/issues)
+- Questions and ideas: [GitHub Discussions](https://github.com/l2keeper/l2keeper/discussions)
+- Bugs and feature requests: [Issues](https://github.com/l2keeper/l2keeper/issues)
 - Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Security: [SECURITY.md](SECURITY.md)
 - Adopters: [ADOPTERS.md](ADOPTERS.md)
 - Roadmap: [ROADMAP.md](ROADMAP.md)
 
-If easyLB is useful, a star and sharing the project help others find it.
+If L2Keeper is useful, a star and sharing the project help others find it.
 
 ## License
 
@@ -317,11 +317,11 @@ Apache License 2.0. See [LICENSE](LICENSE).
 
 ## Documentation
 
-Rendered docs: <https://bzdvdn.github.io/easylb/>
+Rendered docs: <https://l2keeper.github.io/l2keeper/>
 
 English:
 
-- [Helm chart](charts/easylb/README.md)
+- [Helm chart](charts/l2keeper/README.md)
 - [Architecture](docs/en/architecture.md)
 - [Configuration](docs/en/configuration.md)
 - [Source IP](docs/en/source-ip.md)
@@ -356,7 +356,7 @@ make test
 make vet
 make lint           # golangci-lint (revive, staticcheck, gosec, ...)
 make sec            # standalone gosec scan
-make docker-build IMAGE=<registry>/easylb:<tag>
+make docker-build IMAGE=<registry>/l2keeper:<tag>
 make helm-lint
 make helm-template
 make e2e             # k3s/k3d smoke test (test/e2e/run.sh)
@@ -365,7 +365,7 @@ make e2e             # k3s/k3d smoke test (test/e2e/run.sh)
 Layout:
 
 ```text
-cmd/controller/        easyLB controller
+cmd/controller/        L2Keeper controller
 cmd/speaker/           L2 speaker
 api/v1alpha1/          VIPPool, VIPBinding
 internal/controller/   Service and VIPBinding controllers
@@ -373,7 +373,7 @@ internal/speaker/      Lease, ARP, eligibility, interface selection
 internal/ipam/         pool parsing and allocation
 internal/vip/          VIP model and VIPBinding source
 deploy/                static manifests and CRDs
-charts/easylb/         Helm chart
+charts/l2keeper/         Helm chart
 ```
 
 ## Roadmap

@@ -2,10 +2,10 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ include "easylb.fullname" . }}
+  name: {{ include "l2keeper.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "easylb.labels" . | nindent 4 }}
+    {{- include "l2keeper.labels" . | nindent 4 }}
     {{- with .Values.metrics.serviceMonitor.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -15,7 +15,7 @@ spec:
       - {{ .Release.Namespace }}
   selector:
     matchLabels:
-      {{- include "easylb.selectorLabels" . | nindent 6 }}
+      {{- include "l2keeper.selectorLabels" . | nindent 6 }}
   endpoints:
     - port: metrics
       path: /metrics

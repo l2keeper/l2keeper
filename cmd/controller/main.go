@@ -1,4 +1,4 @@
-// Command controller runs the easyLB controller.
+// Command controller runs the L2Keeper controller.
 package main
 
 import (
@@ -18,17 +18,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	easylv1alpha1 "github.com/bzdvdn/easylb/api/v1alpha1"
-	"github.com/bzdvdn/easylb/internal/address"
-	"github.com/bzdvdn/easylb/internal/controller"
-	"github.com/bzdvdn/easylb/internal/vip"
+	l2keeperv1alpha1 "github.com/l2keeper/l2keeper/api/v1alpha1"
+	"github.com/l2keeper/l2keeper/internal/address"
+	"github.com/l2keeper/l2keeper/internal/controller"
+	"github.com/l2keeper/l2keeper/internal/vip"
 )
 
 var scheme = runtime.NewScheme()
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(easylv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(l2keeperv1alpha1.AddToScheme(scheme))
 }
 
 func main() {
@@ -52,11 +52,11 @@ func main() {
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metrics endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the health probe endpoint binds to.")
 	flag.BoolVar(&leaderElect, "leader-elect", false, "Enable leader election for the controller manager.")
-	flag.StringVar(&leaderElectionNamespace, "leader-election-namespace", "easylb-system", "Namespace for the leader election Lease.")
+	flag.StringVar(&leaderElectionNamespace, "leader-election-namespace", "l2keeper-system", "Namespace for the leader election Lease.")
 	flag.DurationVar(&leaseDuration, "leader-election-lease-duration", 15*time.Second, "Leader election lease duration.")
 	flag.DurationVar(&renewDeadline, "leader-election-renew-deadline", 10*time.Second, "Leader election renew deadline.")
 	flag.DurationVar(&retryPeriod, "leader-election-retry-period", 2*time.Second, "Leader election retry period.")
-	flag.StringVar(&lbClass, "load-balancer-class", "easylb.io/easylb", "LoadBalancerClass handled by easyLB.")
+	flag.StringVar(&lbClass, "load-balancer-class", "l2keeper.github.io/lb", "LoadBalancerClass handled by L2Keeper.")
 	flag.BoolVar(&requireClass, "require-class", true, "Only handle Services with the configured loadBalancerClass.")
 	flag.StringVar(&nodeIPTypes, "node-ip-types", "InternalIP", "Comma-separated node address types to publish (InternalIP, ExternalIP).")
 	flag.BoolVar(&publishNodeIPs, "publish-node-ips", true, "Publish node IPs in addition to VIPs.")
@@ -81,7 +81,7 @@ func main() {
 		Metrics:                       metricsserver.Options{BindAddress: metricsAddr},
 		HealthProbeBindAddress:        probeAddr,
 		LeaderElection:                leaderElect,
-		LeaderElectionID:              "easylb.io",
+		LeaderElectionID:              "l2keeper.github.io",
 		LeaderElectionNamespace:       leaderElectionNamespace,
 		LeaderElectionReleaseOnCancel: true,
 		LeaseDuration:                 ptr.To(leaseDuration),
@@ -95,7 +95,7 @@ func main() {
 
 	reconciler := &controller.ServiceReconciler{
 		Client:         mgr.GetClient(),
-		Recorder:       mgr.GetEventRecorderFor("easylb"),
+		Recorder:       mgr.GetEventRecorderFor("l2keeper"),
 		LBClass:        lbClass,
 		VIPSource:      vip.BindingSource{Client: mgr.GetClient()},
 		RequireClass:   requireClass,
@@ -119,7 +119,7 @@ func main() {
 	if autoAssignServices {
 		allocationReconciler := &controller.ServiceAllocationReconciler{
 			Client:       mgr.GetClient(),
-			Recorder:     mgr.GetEventRecorderFor("easylb-autobind"),
+			Recorder:     mgr.GetEventRecorderFor("l2keeper-autobind"),
 			LBClass:      lbClass,
 			RequireClass: requireClass,
 			RequeueAfter: requeueAfter,
@@ -133,7 +133,7 @@ func main() {
 	if enableGatewayAPI {
 		gatewayReconciler := &controller.GatewayReconciler{
 			Client:       mgr.GetClient(),
-			Recorder:     mgr.GetEventRecorderFor("easylb-gateway"),
+			Recorder:     mgr.GetEventRecorderFor("l2keeper-gateway"),
 			RequeueAfter: requeueAfter,
 		}
 		if err := gatewayReconciler.SetupWithManager(mgr); err != nil {
@@ -151,7 +151,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctrl.Log.Info("starting easyLB",
+	ctrl.Log.Info("starting L2Keeper",
 		"loadBalancerClass", lbClass,
 		"nodeIPTypes", nodeIPTypes,
 		"publishNodeIPs", publishNodeIPs,

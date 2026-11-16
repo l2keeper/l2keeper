@@ -15,12 +15,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	easylv1alpha1 "github.com/bzdvdn/easylb/api/v1alpha1"
+	l2keeperv1alpha1 "github.com/l2keeper/l2keeper/api/v1alpha1"
 )
 
 func TestBindingReconcilerExplicitVIPs(t *testing.T) {
-	binding := testBinding("explicit", easylv1alpha1.VIPBindingSpec{
-		ServiceRef: easylv1alpha1.ServiceReference{Name: "ingress"},
+	binding := testBinding("explicit", l2keeperv1alpha1.VIPBindingSpec{
+		ServiceRef: l2keeperv1alpha1.ServiceReference{Name: "ingress"},
 		VIPs:       []string{"10.0.0.100"},
 	})
 	r, c := newBindingReconciler(t, binding)
@@ -38,21 +38,21 @@ func TestBindingReconcilerExplicitVIPs(t *testing.T) {
 }
 
 func TestBindingReconcilerAllocatesFromPool(t *testing.T) {
-	pool := &easylv1alpha1.VIPPool{
+	pool := &l2keeperv1alpha1.VIPPool{
 		ObjectMeta: metav1.ObjectMeta{Name: "pool"},
-		Spec: easylv1alpha1.VIPPoolSpec{
+		Spec: l2keeperv1alpha1.VIPPoolSpec{
 			Addresses: []string{"192.168.56.240-192.168.56.242"},
 		},
 	}
-	first := testBinding("first", easylv1alpha1.VIPBindingSpec{
-		ServiceRef: easylv1alpha1.ServiceReference{Name: "ingress"},
-		Mode:       easylv1alpha1.VIPModeL2,
-		PoolRef:    &easylv1alpha1.PoolReference{Name: "pool"},
+	first := testBinding("first", l2keeperv1alpha1.VIPBindingSpec{
+		ServiceRef: l2keeperv1alpha1.ServiceReference{Name: "ingress"},
+		Mode:       l2keeperv1alpha1.VIPModeL2,
+		PoolRef:    &l2keeperv1alpha1.PoolReference{Name: "pool"},
 	})
-	second := testBinding("second", easylv1alpha1.VIPBindingSpec{
-		ServiceRef: easylv1alpha1.ServiceReference{Name: "ingress-b"},
-		Mode:       easylv1alpha1.VIPModeL2,
-		PoolRef:    &easylv1alpha1.PoolReference{Name: "pool"},
+	second := testBinding("second", l2keeperv1alpha1.VIPBindingSpec{
+		ServiceRef: l2keeperv1alpha1.ServiceReference{Name: "ingress-b"},
+		Mode:       l2keeperv1alpha1.VIPModeL2,
+		PoolRef:    &l2keeperv1alpha1.PoolReference{Name: "pool"},
 	})
 	r, c := newBindingReconciler(t, pool, first, second)
 
@@ -70,21 +70,21 @@ func TestBindingReconcilerAllocatesFromPool(t *testing.T) {
 }
 
 func TestBindingReconcilerPoolExhausted(t *testing.T) {
-	pool := &easylv1alpha1.VIPPool{
+	pool := &l2keeperv1alpha1.VIPPool{
 		ObjectMeta: metav1.ObjectMeta{Name: "pool"},
-		Spec: easylv1alpha1.VIPPoolSpec{
+		Spec: l2keeperv1alpha1.VIPPoolSpec{
 			Addresses: []string{"192.168.56.240"},
 		},
 	}
-	first := testBinding("first", easylv1alpha1.VIPBindingSpec{
-		ServiceRef: easylv1alpha1.ServiceReference{Name: "ingress"},
-		Mode:       easylv1alpha1.VIPModeL2,
-		PoolRef:    &easylv1alpha1.PoolReference{Name: "pool"},
+	first := testBinding("first", l2keeperv1alpha1.VIPBindingSpec{
+		ServiceRef: l2keeperv1alpha1.ServiceReference{Name: "ingress"},
+		Mode:       l2keeperv1alpha1.VIPModeL2,
+		PoolRef:    &l2keeperv1alpha1.PoolReference{Name: "pool"},
 	})
-	second := testBinding("second", easylv1alpha1.VIPBindingSpec{
-		ServiceRef: easylv1alpha1.ServiceReference{Name: "ingress-b"},
-		Mode:       easylv1alpha1.VIPModeL2,
-		PoolRef:    &easylv1alpha1.PoolReference{Name: "pool"},
+	second := testBinding("second", l2keeperv1alpha1.VIPBindingSpec{
+		ServiceRef: l2keeperv1alpha1.ServiceReference{Name: "ingress-b"},
+		Mode:       l2keeperv1alpha1.VIPModeL2,
+		PoolRef:    &l2keeperv1alpha1.PoolReference{Name: "pool"},
 	})
 	r, c := newBindingReconciler(t, pool, first, second)
 
@@ -102,16 +102,16 @@ func TestBindingReconcilerPoolExhausted(t *testing.T) {
 }
 
 func TestBindingReconcilerRequestedIP(t *testing.T) {
-	pool := &easylv1alpha1.VIPPool{
+	pool := &l2keeperv1alpha1.VIPPool{
 		ObjectMeta: metav1.ObjectMeta{Name: "pool"},
-		Spec: easylv1alpha1.VIPPoolSpec{
+		Spec: l2keeperv1alpha1.VIPPoolSpec{
 			Addresses: []string{"192.168.56.240-192.168.56.242"},
 		},
 	}
-	binding := testBinding("requested", easylv1alpha1.VIPBindingSpec{
-		ServiceRef:  easylv1alpha1.ServiceReference{Name: "ingress"},
-		Mode:        easylv1alpha1.VIPModeL2,
-		PoolRef:     &easylv1alpha1.PoolReference{Name: "pool"},
+	binding := testBinding("requested", l2keeperv1alpha1.VIPBindingSpec{
+		ServiceRef:  l2keeperv1alpha1.ServiceReference{Name: "ingress"},
+		Mode:        l2keeperv1alpha1.VIPModeL2,
+		PoolRef:     &l2keeperv1alpha1.PoolReference{Name: "pool"},
 		RequestedIP: "192.168.56.241",
 	})
 	r, c := newBindingReconciler(t, pool, binding)
@@ -125,12 +125,12 @@ func TestBindingReconcilerRequestedIP(t *testing.T) {
 }
 
 func TestBindingReconcilerDetectsConflict(t *testing.T) {
-	first := testBinding("first", easylv1alpha1.VIPBindingSpec{
-		ServiceRef: easylv1alpha1.ServiceReference{Name: "ingress"},
+	first := testBinding("first", l2keeperv1alpha1.VIPBindingSpec{
+		ServiceRef: l2keeperv1alpha1.ServiceReference{Name: "ingress"},
 		VIPs:       []string{"10.0.0.100"},
 	})
-	second := testBinding("second", easylv1alpha1.VIPBindingSpec{
-		ServiceRef: easylv1alpha1.ServiceReference{Name: "ingress-b"},
+	second := testBinding("second", l2keeperv1alpha1.VIPBindingSpec{
+		ServiceRef: l2keeperv1alpha1.ServiceReference{Name: "ingress-b"},
 		VIPs:       []string{"10.0.0.100"},
 	})
 	r, c := newBindingReconciler(t, first, second)
@@ -159,12 +159,12 @@ func newBindingReconciler(t *testing.T, objects ...client.Object) (*VIPBindingRe
 	if err := clientgoscheme.AddToScheme(scheme); err != nil {
 		t.Fatalf("failed to build scheme: %v", err)
 	}
-	if err := easylv1alpha1.AddToScheme(scheme); err != nil {
-		t.Fatalf("failed to add easyLB scheme: %v", err)
+	if err := l2keeperv1alpha1.AddToScheme(scheme); err != nil {
+		t.Fatalf("failed to add L2Keeper scheme: %v", err)
 	}
 	c := fake.NewClientBuilder().
 		WithScheme(scheme).
-		WithStatusSubresource(&easylv1alpha1.VIPBinding{}).
+		WithStatusSubresource(&l2keeperv1alpha1.VIPBinding{}).
 		WithObjects(objects...).
 		Build()
 	return &VIPBindingReconciler{Client: c}, c
@@ -177,17 +177,17 @@ func reconcileBinding(t *testing.T, r *VIPBindingReconciler, key types.Namespace
 	}
 }
 
-func getBinding(t *testing.T, c client.Client, key types.NamespacedName) *easylv1alpha1.VIPBinding {
+func getBinding(t *testing.T, c client.Client, key types.NamespacedName) *l2keeperv1alpha1.VIPBinding {
 	t.Helper()
-	var binding easylv1alpha1.VIPBinding
+	var binding l2keeperv1alpha1.VIPBinding
 	if err := c.Get(context.Background(), key, &binding); err != nil {
 		t.Fatalf("failed to get binding: %v", err)
 	}
 	return &binding
 }
 
-func testBinding(name string, spec easylv1alpha1.VIPBindingSpec) *easylv1alpha1.VIPBinding {
-	return &easylv1alpha1.VIPBinding{
+func testBinding(name string, spec l2keeperv1alpha1.VIPBindingSpec) *l2keeperv1alpha1.VIPBinding {
+	return &l2keeperv1alpha1.VIPBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "default"},
 		Spec:       spec,
 	}
@@ -205,17 +205,17 @@ func TestBindingReconcilerAvoidBuggyIPs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pool := &easylv1alpha1.VIPPool{
+			pool := &l2keeperv1alpha1.VIPPool{
 				ObjectMeta: metav1.ObjectMeta{Name: "pool"},
-				Spec: easylv1alpha1.VIPPoolSpec{
+				Spec: l2keeperv1alpha1.VIPPoolSpec{
 					Addresses:     []string{"192.168.56.0/24"},
 					AvoidBuggyIPs: tt.avoid,
 				},
 			}
-			binding := testBinding("first", easylv1alpha1.VIPBindingSpec{
-				ServiceRef: easylv1alpha1.ServiceReference{Name: "ingress"},
-				Mode:       easylv1alpha1.VIPModeL2,
-				PoolRef:    &easylv1alpha1.PoolReference{Name: "pool"},
+			binding := testBinding("first", l2keeperv1alpha1.VIPBindingSpec{
+				ServiceRef: l2keeperv1alpha1.ServiceReference{Name: "ingress"},
+				Mode:       l2keeperv1alpha1.VIPModeL2,
+				PoolRef:    &l2keeperv1alpha1.PoolReference{Name: "pool"},
 			})
 			r, c := newBindingReconciler(t, pool, binding)
 
@@ -230,17 +230,17 @@ func TestBindingReconcilerAvoidBuggyIPs(t *testing.T) {
 }
 
 func TestBindingReconcilerAvoidBuggyRequestedIP(t *testing.T) {
-	pool := &easylv1alpha1.VIPPool{
+	pool := &l2keeperv1alpha1.VIPPool{
 		ObjectMeta: metav1.ObjectMeta{Name: "pool"},
-		Spec: easylv1alpha1.VIPPoolSpec{
+		Spec: l2keeperv1alpha1.VIPPoolSpec{
 			Addresses:     []string{"192.168.56.0/24"},
 			AvoidBuggyIPs: true,
 		},
 	}
-	binding := testBinding("requested", easylv1alpha1.VIPBindingSpec{
-		ServiceRef:  easylv1alpha1.ServiceReference{Name: "ingress"},
-		Mode:        easylv1alpha1.VIPModeL2,
-		PoolRef:     &easylv1alpha1.PoolReference{Name: "pool"},
+	binding := testBinding("requested", l2keeperv1alpha1.VIPBindingSpec{
+		ServiceRef:  l2keeperv1alpha1.ServiceReference{Name: "ingress"},
+		Mode:        l2keeperv1alpha1.VIPModeL2,
+		PoolRef:     &l2keeperv1alpha1.PoolReference{Name: "pool"},
 		RequestedIP: "192.168.56.255",
 	})
 	r, c := newBindingReconciler(t, pool, binding)
@@ -295,15 +295,15 @@ func TestBindingReconcilerSharedIP(t *testing.T) {
 			svcA.Spec.Ports = []corev1.ServicePort{{Port: tt.portA}}
 			svcB := autoTestService("b", "default", nil, nil)
 			svcB.Spec.Ports = []corev1.ServicePort{{Port: tt.portB}}
-			first := testBinding("first", easylv1alpha1.VIPBindingSpec{
-				ServiceRef: easylv1alpha1.ServiceReference{Name: "a"},
-				Mode:       easylv1alpha1.VIPModeL2,
+			first := testBinding("first", l2keeperv1alpha1.VIPBindingSpec{
+				ServiceRef: l2keeperv1alpha1.ServiceReference{Name: "a"},
+				Mode:       l2keeperv1alpha1.VIPModeL2,
 				VIPs:       []string{"10.0.0.50"},
 				SharingKey: tt.keyA,
 			})
-			second := testBinding("second", easylv1alpha1.VIPBindingSpec{
-				ServiceRef: easylv1alpha1.ServiceReference{Name: "b"},
-				Mode:       easylv1alpha1.VIPModeL2,
+			second := testBinding("second", l2keeperv1alpha1.VIPBindingSpec{
+				ServiceRef: l2keeperv1alpha1.ServiceReference{Name: "b"},
+				Mode:       l2keeperv1alpha1.VIPModeL2,
 				VIPs:       []string{"10.0.0.50"},
 				SharingKey: tt.keyB,
 			})

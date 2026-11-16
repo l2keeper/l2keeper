@@ -2,9 +2,9 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "easylb.fullname" . }}-speaker
+  name: {{ include "l2keeper.fullname" . }}-speaker
   labels:
-    {{- include "easylb.labels" . | nindent 4 }}
+    {{- include "l2keeper.labels" . | nindent 4 }}
     app.kubernetes.io/component: speaker
 rules:
   - apiGroups: [""]
@@ -16,7 +16,7 @@ rules:
   - apiGroups: ["discovery.k8s.io"]
     resources: ["endpointslices"]
     verbs: ["get", "list", "watch"]
-  - apiGroups: ["easylb.io"]
+  - apiGroups: ["l2keeper.github.io"]
     resources: ["vipbindings"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["coordination.k8s.io"]

@@ -3,7 +3,7 @@
 **English** | [Русский](../ru/configuration.md)
 
 The only source of truth for VIPs is the `VIPPool` and `VIPBinding` CRDs.
-Service annotations (`easylb.io/vips`, `easylb.io/vip-config`) have been
+Service annotations (`l2keeper.github.io/vips`, `l2keeper.github.io/vip-config`) have been
 removed and are ignored.
 
 ## VIPPool
@@ -11,7 +11,7 @@ removed and are ignored.
 A cluster-scoped address pool.
 
 ```yaml
-apiVersion: easylb.io/v1alpha1
+apiVersion: l2keeper.github.io/v1alpha1
 kind: VIPPool
 metadata:
   name: ingress-vips
@@ -49,12 +49,12 @@ Limits:
 
 ## Automatic Service allocation {#auto-allocation}
 
-With `autoAssign: true` (the default), easyLB acts like MetalLB L2: it watches
+With `autoAssign: true` (the default), L2Keeper acts like MetalLB L2: it watches
 `LoadBalancer` Services and creates a `VIPBinding` for a Service that does not
 have one yet. This removes the need to create a binding per Service.
 
 ```yaml
-apiVersion: easylb.io/v1alpha1
+apiVersion: l2keeper.github.io/v1alpha1
 kind: VIPPool
 metadata:
   name: default-vips
@@ -85,7 +85,7 @@ Behavior:
 - if `metallb.io/address-pool` (or the legacy
   `metallb.universe.tf/address-pool`) names a pool on the Service, that pool is
   used explicitly and `autoAssign` is not required;
-- `easylb.io/auto-assign: "false"` on the Service disables auto-allocation for
+- `l2keeper.github.io/auto-assign: "false"` on the Service disables auto-allocation for
   it;
 - `controller.autoAssignServices: false` disables the feature globally;
 - matching pools are tried in name order; an exhausted pool is skipped in
@@ -117,10 +117,10 @@ overlap; auto-created bindings set `spec.sharingKey` automatically.
 A namespaced object, usually in the Service namespace.
 
 ```yaml
-apiVersion: easylb.io/v1alpha1
+apiVersion: l2keeper.github.io/v1alpha1
 kind: VIPBinding
 metadata:
-  name: ingress-easylb
+  name: ingress-l2keeper
   namespace: ingress-nginx
 spec:
   serviceRef:
@@ -147,7 +147,7 @@ Rules:
 - the same IP cannot be claimed by two bindings unless both set the same
   non-empty `sharingKey` and their Services expose non-overlapping ports;
 - `mode` applies to the whole binding. For a mixed case (some VIPs on
-  keepalived, some on easyLB), create **two bindings** for the same Service.
+  keepalived, some on L2Keeper), create **two bindings** for the same Service.
 
 ### Explicit VIPs without a pool
 
@@ -155,7 +155,7 @@ A `VIPPool` is optional. If you already know the VIP, set `spec.vips` directly
 and do not use `poolRef`/`requestedIP`:
 
 ```yaml
-apiVersion: easylb.io/v1alpha1
+apiVersion: l2keeper.github.io/v1alpha1
 kind: VIPBinding
 metadata:
   name: ingress-keepalived
@@ -169,11 +169,11 @@ spec:
 ```
 
 This is the minimal setup for the original keepalived problem: keepalived owns
-the VIP, easyLB publishes it in `Service.status.loadBalancer.ingress`, and
+the VIP, L2Keeper publishes it in `Service.status.loadBalancer.ingress`, and
 kube-proxy preserves the client source IP with
 `externalTrafficPolicy: Local`. No pool and no speaker are needed.
 
-For an easyLB-owned VIP, use `mode: l2` with the same explicit `vips` and keep
+For an L2Keeper-owned VIP, use `mode: l2` with the same explicit `vips` and keep
 the speaker enabled. Automatic allocation only works with a `VIPPool`; a manual
 binding is never overwritten by it.
 
@@ -206,7 +206,7 @@ Possible `reason` values:
 | `RequestedIPUnavailable` | `requestedIP` is outside the pool or taken |
 | `AllocationError` | API/read error |
 
-On a transient pool error, easyLB keeps the previous allocation instead of
+On a transient pool error, L2Keeper keeps the previous allocation instead of
 clearing it, so traffic is not interrupted.
 
 ## Examples
@@ -214,7 +214,7 @@ clearing it, so traffic is not interrupted.
 ### Keepalived VIP (external owner)
 
 ```yaml
-apiVersion: easylb.io/v1alpha1
+apiVersion: l2keeper.github.io/v1alpha1
 kind: VIPBinding
 metadata:
   name: ingress-keepalived
@@ -227,16 +227,16 @@ spec:
     - 192.168.56.250
 ```
 
-easyLB only publishes `.250` in the status. The VIP assignment, ARP/VRRP, and
+L2Keeper only publishes `.250` in the status. The VIP assignment, ARP/VRRP, and
 failover are handled by keepalived. The speaker ignores this binding.
 
-### easyLB L2 VIP from a pool
+### L2Keeper L2 VIP from a pool
 
 ```yaml
-apiVersion: easylb.io/v1alpha1
+apiVersion: l2keeper.github.io/v1alpha1
 kind: VIPBinding
 metadata:
-  name: ingress-easylb
+  name: ingress-l2keeper
   namespace: ingress-nginx
 spec:
   serviceRef:
@@ -277,14 +277,14 @@ controller:
 
 | Flag | Default | Purpose |
 |---|---|---|
-| `--load-balancer-class` | `easylb.io/easylb` | Service class |
+| `--load-balancer-class` | `l2keeper.github.io/lb` | Service class |
 | `--require-class` | `true` | require `spec.loadBalancerClass` |
 | `--enable-gateway-api` | `false` | watch `gateway.networking.k8s.io/v1` `Gateway` and create `VIPBinding` |
 | `--auto-assign-services` | `true` | create `VIPBinding` automatically for matching Services |
 | `--node-ip-types` | `InternalIP` | node address types to publish |
 | `--publish-node-ips` | `true` | publish node IPs |
 | `--leader-elect` | `false` | leader election |
-| `--leader-election-namespace` | `easylb-system` | Lease namespace |
+| `--leader-election-namespace` | `l2keeper-system` | Lease namespace |
 | `--leader-election-lease-duration` | `15s` | Lease duration |
 | `--leader-election-renew-deadline` | `10s` | renew deadline |
 | `--leader-election-retry-period` | `2s` | retry period |
@@ -294,7 +294,7 @@ controller:
 
 | Flag | Default | Purpose |
 |---|---|---|
-| `--lease-namespace` | `easylb-system` | per-VIP Lease namespace |
+| `--lease-namespace` | `l2keeper-system` | per-VIP Lease namespace |
 | `--node-ip-type` | `InternalIP` | node address used to select the ARP interface |
 | `--interface` | empty | ARP interface; auto-detected when empty |
 | `--lease-duration` | `15s` | Lease duration |
@@ -311,7 +311,7 @@ controller:
   enabled: true
   replicas: 2
   image:
-    repository: <registry>/easylb
+    repository: <registry>/l2keeper
     tag: <tag>
   publishNodeIPs: true
   nodeIPTypes: InternalIP
@@ -325,7 +325,7 @@ controller:
 speaker:
   enabled: true
   image:
-    repository: <registry>/easylb
+    repository: <registry>/l2keeper
     tag: <tag>
   interface: ""
   nodeIPType: InternalIP
@@ -357,7 +357,7 @@ bindings:
     mode: external
     vips:
       - 192.168.56.250
-  ingress-easylb:
+  ingress-l2keeper:
     namespace: ingress-nginx
     serviceRef: my-release-ingress-nginx-controller
     mode: l2
@@ -365,18 +365,18 @@ bindings:
 ```
 
 `pools` and `bindings` are maps: the key becomes the object name. A complete
-example is in `charts/easylb/values-example.yaml`.
+example is in `charts/l2keeper/values-example.yaml`.
 
 For the native Gateway API integration, set `gatewayAPI.enabled: true` and
 install the Gateway API `v1` CRDs first. Gateway implementation data-plane
 Services usually have no `loadBalancerClass`; either keep
-`controller.requireClass: false` (easyLB then manages every classless
+`controller.requireClass: false` (L2Keeper then manages every classless
 `LoadBalancer` Service in the cluster) or set `loadBalancerClass:
-easylb.io/easylb` on that Service explicitly.
+l2keeper.github.io/lb` on that Service explicitly.
 
 ## Helm and CRDs
 
-- CRDs live in `charts/easylb/crds/` and are installed on the first
+- CRDs live in `charts/l2keeper/crds/` and are installed on the first
   `helm install`.
 - `helm upgrade` **does not update** CRDs from `crds/`. When changing the
   schema, apply `deploy/crds.yaml` separately.
@@ -384,8 +384,8 @@ easylb.io/easylb` on that Service explicitly.
 
 ## Migration from annotations
 
-Annotations have been removed. If a Service still has `easylb.io/vips` or
-`easylb.io/vip-config`, they are ignored. Create a `VIPBinding` for the same
+Annotations have been removed. If a Service still has `l2keeper.github.io/vips` or
+`l2keeper.github.io/vip-config`, they are ignored. Create a `VIPBinding` for the same
 Service; the controller will start publishing its VIPs.
 
 ## Conflicts

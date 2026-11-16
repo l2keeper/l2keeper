@@ -1,8 +1,9 @@
-site_name: easyLB
+site_name: L2Keeper
+site_url: https://l2keeper.github.io/l2keeper/
 site_description: Lightweight Kubernetes LoadBalancer controller and ServiceLB/MetalLB L2 alternative for bare-metal, on-prem, k3s and RKE2 clusters
-site_author: easyLB contributors
-repo_url: https://github.com/bzdvdn/easylb
-repo_name: bzdvdn/easylb
+site_author: L2Keeper contributors
+repo_url: https://github.com/l2keeper/l2keeper
+repo_name: l2keeper/l2keeper
 edit_uri: edit/master/docs/
 
 theme:
